@@ -1,0 +1,80 @@
+/* ==========================================================================
+   AURA LIVING - Design System Tokens & Root Variables
+   Luxury Nordic & Japandi Furniture Aesthetic
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+:root {
+    /* Brand Palette - Deep Walnut & Champagne Brass */
+    --primary: #1c1917;
+    --primary-light: #2d2621;
+    --primary-dark: #12100e;
+    
+    --accent: #c89b53;
+    --accent-hover: #b3843b;
+    --accent-light: #fbf5e8;
+    --accent-glow: rgba(200, 155, 83, 0.25);
+    
+    /* Background Canvas */
+    --bg-canvas: #fbf9f6;
+    --bg-surface: #ffffff;
+    --bg-subtle: #f5f0e9;
+    --bg-dark: #161413;
+    
+    /* Typography Colors */
+    --text-primary: #1a1614;
+    --text-secondary: #57534e;
+    --text-muted: #8c827a;
+    --text-light: #ffffff;
+    
+    /* Borders */
+    --border-color: rgba(60, 45, 30, 0.09);
+    --border-focus: #c89b53;
+    
+    /* Status Colors */
+    --status-success: #10b981;
+    --status-success-bg: #ecfdf5;
+    --status-warning: #f59e0b;
+    --status-warning-bg: #fffbeb;
+    --status-danger: #ef4444;
+    --status-danger-bg: #fef2f2;
+    --status-info: #0284c7;
+    --status-info-bg: #f0f9ff;
+    
+    /* Typography Font Families */
+    --font-heading: 'Outfit', 'Playfair Display', Georgia, serif;
+    --font-serif: 'Playfair Display', Georgia, serif;
+    --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    
+    /* Border Radii */
+    --radius-xs: 6px;
+    --radius-sm: 10px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --radius-full: 9999px;
+    
+    /* Elevation Shadows */
+    --shadow-sm: 0 2px 8px rgba(35, 28, 20, 0.04);
+    --shadow-md: 0 10px 30px -6px rgba(35, 28, 20, 0.07);
+    --shadow-lg: 0 20px 50px -10px rgba(35, 28, 20, 0.12);
+    --shadow-glass: 0 8px 32px 0 rgba(31, 24, 18, 0.08);
+    
+    /* Transitions */
+    --transition-fast: 0.18s ease;
+    --transition-normal: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-slow: 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+
+    /* Bootstrap Overrides / Integration */
+    --bs-primary: #1c1917;
+    --bs-primary-rgb: 28, 25, 23;
+    --bs-body-font-family: var(--font-body);
+    --bs-body-color: var(--text-primary);
+    --bs-body-bg: var(--bg-canvas);
+    --bs-border-color: var(--border-color);
+    --bs-border-radius: var(--radius-sm);
+    --bs-border-radius-lg: var(--radius-md);
+    --bs-border-radius-sm: var(--radius-xs);
+    --bs-link-color: var(--text-primary);
+    --bs-link-hover-color: var(--accent);
+}

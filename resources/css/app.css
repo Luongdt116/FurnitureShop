@@ -1,3 +1,28 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* ==========================================================================
+   AURA LIVING - Main Application Bundle
+   Bootstrap 5.3 + Font Awesome 6.4 + Aura Living Design System
+   ========================================================================== */
+
+/* 1. Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+/* 2. Bootstrap 5.3 Framework */
+@import 'bootstrap/dist/css/bootstrap.min.css';
+
+/* 3. Font Awesome 6.4.0 */
+@import '@fortawesome/fontawesome-free/css/all.min.css';
+
+/* 4. Aura Living Design Tokens */
+@import './tokens.css';
+
+/* 5. Aura Living Base & Common Components */
+@import './base.css';
+
+/* 6. Aura Living Storefront Pages */
+@import './storefront.css';
+
+/* 7. Aura Living Admin & Reports */
+@import './admin.css';
+
+/* 8. Aura Living Chatbot Widget */
+@import './chatbot.css';
