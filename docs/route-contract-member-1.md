@@ -1,0 +1,73 @@
+# Route contract for order and account work
+
+This contract reserves Laravel route names and URLs for the customer order, return, review, admin order/user, and chat work. It is a handoff proposal for integration with Member 1's shared layout. Do not duplicate these declarations in parallel; the routes should be added once to `routes/web.php` after the shared route owner integrates the contract.
+
+## Shared layout handoff
+
+The current application only has the Laravel welcome page and `/` route. No Member 1 layout/sidebar implementation is present yet. The visual reference at `D:\WORK\NAM4\3CDTH\Tuan4\chuyende\Giao diện wireframe` provides the following integration anchors:
+
+- Customer account shell: `.account-layout`, `.account-sidebar`, `.account-user-card`, `.account-nav-list`, `.account-nav-item`, `.account-tab-panel`.
+- Admin shell: `.admin-sidebar`, `.admin-sidebar-header`, `.admin-sidebar-menu`, `.admin-menu-item`, `.admin-sidebar-footer`.
+- Existing design tokens in `css/base.css`: walnut `--primary: #1c1917`, champagne `--accent: #c89b53`, canvas `--bg-canvas: #fbf9f6`, surface `--bg-surface: #ffffff`, heading font `Outfit`/`Playfair Display`, body font `Plus Jakarta Sans`, rounded radii, soft shadows, and 0.18–0.5s transitions.
+- Preserve the supplied Bootstrap 5.3.8 and Font Awesome 6.4.0 integration in the application layout; avoid bringing the sample's prototype-only inline click handlers or JavaScript business logic into Blade.
+- Feature root IDs use the agreed prefixes: `orders-`, `tracking-`, `cancel-`, `return-`, `review-`, `chat-`, `admin-order-`, and `admin-user-`.
+
+## Route declarations
+
+Controller/action names below are the proposed stable contract; controllers may be grouped under namespaces while keeping route names and URL behavior stable. Customer routes require `auth`. Admin routes require `auth` plus the existing database-backed admin role middleware/policy.
+
+| Method | URL | Route name | Controller action | Purpose |
+| --- | --- | --- | --- | --- |
+| GET | `/tai-khoan/don-hang` | `orders.index` | `OrderController@index` | Customer order list and filters |
+| GET | `/tai-khoan/don-hang/{order}` | `orders.show` | `OrderController@show` | Order detail, snapshots, payment, address, status history |
+| POST | `/tai-khoan/don-hang/{order}/huy` | `orders.cancel` | `OrderController@cancel` | Customer cancellation; required non-empty reason; delegates to `CancellationService` |
+| GET | `/tai-khoan/don-hang/{order}/doi-tra` | `returns.index` | `ReturnRequestController@index` | Return requests for an order |
+| POST | `/tai-khoan/don-hang/{order}/doi-tra` | `returns.store` | `ReturnRequestController@store` | Create a return/exchange/refund request; allow multiple requests per order |
+| GET | `/tai-khoan/doi-tra/{returnRequest}` | `returns.show` | `ReturnRequestController@show` | Return status, requested items, evidence, admin response, refund result |
+| POST | `/tai-khoan/don-hang/{order}/san-pham/{orderItem}/danh-gia` | `reviews.store` | `ReviewController@store` | Create a review after ownership/order/product validation |
+| GET | `/admin/don-hang` | `admin.orders.index` | `Admin\OrderController@index` | Search, filter and paginate orders |
+| GET | `/admin/don-hang/{order}` | `admin.orders.show` | `Admin\OrderController@show` | Admin order, payment, tracking and status history |
+| PATCH | `/admin/don-hang/{order}/trang-thai` | `admin.orders.status` | `Admin\OrderController@updateStatus` | Validated transition; append history with admin actor |
+| PATCH | `/admin/don-hang/{order}/van-chuyen` | `admin.orders.tracking` | `Admin\OrderController@updateTracking` | Update carrier/tracking fields supported by existing schema |
+| POST | `/admin/don-hang/{order}/huy` | `admin.orders.cancel` | `Admin\OrderController@cancel` | Required reason; delegates to `CancellationService` |
+| GET | `/admin/nguoi-dung` | `admin.users.index` | `Admin\UserController@index` | Search, filter and paginate users |
+| PATCH | `/admin/nguoi-dung/{user}` | `admin.users.update` | `Admin\UserController@update` | Update database-backed role/status with authorization checks |
+| GET | `/chat` | `chat.index` | `ChatController@index` | Render the chatbot widget/page shell |
+| POST | `/chat/webhook` | `chat.webhook` | `ChatController@webhook` | Accept a chat turn; return JSON response and optional real product cards/questions |
+
+All mutating browser forms use Laravel routes, `@csrf`, validation, and flashed success/error feedback. The customer cancellation endpoint must only accept eligible non-terminal orders. Admin status updates must reject invalid transitions and must never advance a cancelled order. Payment expiry is presentation-only using `payment_expires_at`; timeout cancellation remains the backend job/service responsibility.
+
+## Chat webhook response
+
+`POST /chat/webhook` returns JSON in this shape. `products` and `suggestedQuestions` are optional; product URLs are generated by Laravel and must point to same-site product detail routes.
+
+```json
+{
+  "response": "Mình tìm được một số sản phẩm phù hợp với phòng khách của bạn.",
+  "products": [
+    {
+      "id": 12,
+      "name": "Sofa gỗ sồi",
+      "imageUrl": "/storage/products/sofa.jpg",
+      "price": 12500000,
+      "compareAtPrice": 14900000,
+      "slug": "sofa-go-soi",
+      "url": "/san-pham/sofa-go-soi"
+    }
+  ],
+  "suggestedQuestions": ["Có màu khác không?", "Kích thước sản phẩm là bao nhiêu?"]
+}
+```
+
+## Service and data contracts
+
+- Cancellation: customer/admin controllers validate a required reason and call Member 2's `CancellationService`. They do not change stock or duplicate timeout behavior. The timeout path keeps the service reason `Quá thời gian thanh toán`.
+- Order history/status: use existing `orders`, `order_items`, `payments`, and `order_status_histories`; do not invent status values. Display `preparing`, `awaiting_shipment`, `shipping`, `delivered`, and `cancelled` as the agreed Vietnamese labels. Record admin actor on admin transitions.
+- Returns and reviews: use existing `return_requests`, `return_request_items`, and `reviews`. Multiple return requests for one order are supported; do not add a unique constraint to `return_requests.order_id`. No stock movement occurs on request submission/approval. Review authorization requires the authenticated user, delivered order, product, and order item to belong together.
+- Chat: `ChatController`/`ChatbotService` read real product data; product cards contain server-generated same-site detail URLs. If a provider is absent, use database-backed catalogue matching and state no AI provider is connected. Conversation and message persistence uses `chat_conversations`/`chat_messages`; any message metadata schema addition requires coordination with Member 2 and a new, non-duplicative migration.
+
+## Integration notes
+
+- Keep the route contract centralized in `routes/web.php` and route names stable so shared Blade layouts can use `route(...)` helpers.
+- Bind `{order}`, `{orderItem}`, and `{returnRequest}` through ownership-aware authorization; never trust IDs submitted by the browser.
+- Do not create schema/migration changes as part of layout integration. Existing migrations remain the source of truth.
