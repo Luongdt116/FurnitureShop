@@ -27,6 +27,7 @@ class Payment extends Model
             'amount' => 'decimal:2',
             'paid_at' => 'datetime',
             'refunded_at' => 'datetime',
+            'payment_expires_at' => 'datetime',
         ];
     }
 

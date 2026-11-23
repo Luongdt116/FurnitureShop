@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\StorefrontController;
+use App\Http\Controllers\OrderController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -110,9 +111,9 @@ Route::middleware('auth')->group(function () {
         return view('storefront.account', ['tab' => 'addresses']);
     })->name('account.addresses');
 
-    Route::get('/orders', function () {
-        return view('storefront.account', ['tab' => 'orders']);
-    })->name('orders.index');
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
 });
 
 // Fallback for guest viewing orders link in header
