@@ -63,7 +63,7 @@
             {{-- Cart Drawer Trigger --}}
             <button type="button" id="store-cart-toggle-btn" class="action-btn" title="Giỏ hàng" onclick="toggleCartDrawer(true)">
                 <i class="fas fa-shopping-bag"></i>
-                <span id="store-cart-badge-count" class="cart-badge">0</span>
+                <span id="store-cart-badge-count" class="cart-badge">{{ array_sum(array_column(session('cart', []), 'quantity')) }}</span>
             </button>
 
             {{-- User Dropdown Menu --}}

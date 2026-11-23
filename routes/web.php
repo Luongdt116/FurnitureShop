@@ -20,7 +20,8 @@ use Illuminate\Support\Facades\Route;
 // ==========================================
 Route::get('/', [StorefrontController::class, 'home'])->name('home');
 Route::get('/catalog', [StorefrontController::class, 'catalog'])->name('catalog.index');
-Route::get('/catalog/search', [StorefrontController::class, 'catalog'])->name('catalog.search');
+Route::get('/catalog/search', [StorefrontController::class, 'search'])->name('catalog.search');
+Route::get('/catalog/suggestions', [StorefrontController::class, 'searchSuggestions'])->name('catalog.suggestions');
 Route::get('/product/{slug}', [StorefrontController::class, 'productDetail'])->name('product.detail');
 
 // Newsletter subscription
@@ -86,9 +87,9 @@ Route::get('/cart', function () {
     return view('storefront.cart');
 })->name('cart.index');
 
-Route::post('/cart/add', function (Request $request) {
-    return back()->with('success', 'Đã thêm sản phẩm vào giỏ hàng!');
-})->name('cart.add');
+Route::post('/cart/add', [StorefrontController::class, 'addToCart'])->name('cart.add');
+Route::post('/cart/remove/{id}', [StorefrontController::class, 'removeFromCart'])->name('cart.remove');
+Route::post('/cart/clear', [StorefrontController::class, 'clearCart'])->name('cart.clear');
 
 Route::get('/checkout', function () {
     return view('storefront.checkout');
