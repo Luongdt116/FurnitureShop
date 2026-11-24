@@ -4,8 +4,12 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Coupon;
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Models\ReturnRequest;
 use App\Models\Review;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -301,5 +305,259 @@ class FurnitureShopSeeder extends Seeder
                 'is_active' => true,
             ]
         );
+
+        // 5. Seed Realistic Orders & Accounting Test Cases
+        $p1 = Product::firstWhere('sku', 'SF-BG-01');
+        $p2 = Product::firstWhere('sku', 'BA-ND-02');
+        $p3 = Product::firstWhere('sku', 'GN-SC-03');
+        $p4 = Product::firstWhere('sku', 'BLV-WL-04');
+        $p5 = Product::firstWhere('sku', 'GH-EM-05');
+        $p8 = Product::firstWhere('sku', 'BT-MD-08');
+        $p7 = Product::firstWhere('sku', 'TQ-CK-07');
+
+        $coupon1 = Coupon::firstWhere('code', 'AURANEW');
+        $coupon2 = Coupon::firstWhere('code', 'LUXE500');
+
+        // Order 1: Delivered + Paid with Coupon (Pure revenue = total)
+        $ord1 = Order::firstOrCreate(
+            ['order_code' => 'ORD-202611-001'],
+            [
+                'user_id' => $customer->id,
+                'coupon_id' => $coupon1?->id,
+                'recipient_name' => 'Nguyễn Thanh Tùng',
+                'phone' => '0912345678',
+                'address' => 'P.1802, Toà S2.05 VinHomes Ocean Park, Gia Lâm, Hà Nội',
+                'subtotal' => 26000000,
+                'shipping_fee' => 0,
+                'discount_amount' => 1500000,
+                'total' => 24500000,
+                'status' => 'delivered',
+                'payment_method' => 'vietqr',
+                'payment_status' => 'paid',
+                'completed_at' => now()->subHours(5),
+                'created_at' => now()->subDays(3),
+            ]
+        );
+        if ($p1 && $ord1->items()->count() === 0) {
+            $ord1->items()->create([
+                'product_id' => $p1->id,
+                'product_name' => $p1->name,
+                'product_image' => $p1->images()->first()?->path,
+                'sku' => $p1->sku,
+                'quantity' => 1,
+                'unit_price' => 26000000,
+                'line_total' => 26000000,
+            ]);
+            $ord1->payments()->create([
+                'method' => 'vietqr',
+                'provider' => 'VietinBank',
+                'status' => 'completed',
+                'amount' => 24500000,
+                'paid_at' => now()->subDays(3),
+            ]);
+        }
+
+        // Order 2: Shipping + Paid (Does NOT count in delivered revenue yet)
+        $ord2 = Order::firstOrCreate(
+            ['order_code' => 'ORD-202611-002'],
+            [
+                'user_id' => $customer->id,
+                'coupon_id' => $coupon2?->id,
+                'recipient_name' => 'Trần Thị Thu Hà',
+                'phone' => '0988765432',
+                'address' => 'Số 45 Đường số 7, KĐT An Phú, TP. Thủ Đức, TP. Hồ Chí Minh',
+                'subtotal' => 19400000,
+                'shipping_fee' => 0,
+                'discount_amount' => 500000,
+                'total' => 18900000,
+                'status' => 'shipping',
+                'payment_method' => 'vnpay',
+                'payment_status' => 'paid',
+                'created_at' => now()->subHours(8),
+            ]
+        );
+        if ($p2 && $ord2->items()->count() === 0) {
+            $ord2->items()->create([
+                'product_id' => $p2->id,
+                'product_name' => $p2->name,
+                'product_image' => $p2->images()->first()?->path,
+                'sku' => $p2->sku,
+                'quantity' => 1,
+                'unit_price' => 19400000,
+                'line_total' => 19400000,
+            ]);
+            $ord2->payments()->create([
+                'method' => 'vnpay',
+                'provider' => 'VNPAY-QR',
+                'status' => 'completed',
+                'amount' => 18900000,
+                'paid_at' => now()->subHours(8),
+            ]);
+        }
+
+        // Order 3: Delivered + Paid, BUT has a Completed Full Refund (Net revenue = 0₫)
+        $ord3 = Order::firstOrCreate(
+            ['order_code' => 'ORD-202611-003'],
+            [
+                'user_id' => $customer->id,
+                'recipient_name' => 'Phạm Hoàng Nam',
+                'phone' => '0933221100',
+                'address' => 'Tầng 5, Toà Diamond Plaza, 34 Lê Duẩn, Quận 1, TP.HCM',
+                'subtotal' => 7800000,
+                'shipping_fee' => 0,
+                'discount_amount' => 0,
+                'total' => 7800000,
+                'status' => 'delivered',
+                'payment_method' => 'cod',
+                'payment_status' => 'paid',
+                'completed_at' => now()->subDays(2),
+                'created_at' => now()->subDays(5),
+            ]
+        );
+        if ($p8 && $ord3->items()->count() === 0) {
+            $ord3->items()->create([
+                'product_id' => $p8->id,
+                'product_name' => $p8->name,
+                'product_image' => $p8->images()->first()?->path,
+                'sku' => $p8->sku,
+                'quantity' => 1,
+                'unit_price' => 7800000,
+                'line_total' => 7800000,
+            ]);
+            $ord3->payments()->create([
+                'method' => 'cod',
+                'status' => 'completed',
+                'amount' => 7800000,
+                'paid_at' => now()->subDays(2),
+            ]);
+
+            // Completed Refund Request
+            ReturnRequest::firstOrCreate(
+                ['return_code' => 'RET-202611-001'],
+                [
+                    'order_id' => $ord3->id,
+                    'user_id' => $customer->id,
+                    'return_type' => 'refund',
+                    'status' => 'completed',
+                    'reason' => 'Mặt đá bị xước dăm trong quá trình vận chuyển bốc vác.',
+                    'refund_amount' => 7800000,
+                    'requested_at' => now()->subDays(2),
+                    'approved_at' => now()->subDays(1),
+                    'completed_at' => now()->subHours(10),
+                ]
+            );
+        }
+
+        // Order 4: Delivered + Paid, with Completed EXCHANGE (Keep revenue, no deduction)
+        $ord4 = Order::firstOrCreate(
+            ['order_code' => 'ORD-202611-004'],
+            [
+                'user_id' => $customer->id,
+                'recipient_name' => 'Vũ Thị Minh Hằng',
+                'phone' => '0918776655',
+                'address' => 'Số 12 Ngõ 88 Phố Huế, Hai Bà Trưng, Hà Nội',
+                'subtotal' => 16400000,
+                'shipping_fee' => 0,
+                'discount_amount' => 500000,
+                'total' => 15900000,
+                'status' => 'delivered',
+                'payment_method' => 'vietqr',
+                'payment_status' => 'paid',
+                'completed_at' => now()->subDays(3),
+                'created_at' => now()->subDays(6),
+            ]
+        );
+        if ($p5 && $ord4->items()->count() === 0) {
+            $ord4->items()->create([
+                'product_id' => $p5->id,
+                'product_name' => $p5->name,
+                'product_image' => $p5->images()->first()?->path,
+                'sku' => $p5->sku,
+                'quantity' => 1,
+                'unit_price' => 16400000,
+                'line_total' => 16400000,
+            ]);
+            $ord4->payments()->create([
+                'method' => 'vietqr',
+                'status' => 'completed',
+                'amount' => 15900000,
+                'paid_at' => now()->subDays(6),
+            ]);
+
+            // Completed Exchange Request (0₫ refund)
+            ReturnRequest::firstOrCreate(
+                ['return_code' => 'RET-202611-002'],
+                [
+                    'order_id' => $ord4->id,
+                    'user_id' => $customer->id,
+                    'return_type' => 'exchange',
+                    'status' => 'completed',
+                    'reason' => 'Đổi từ màu Nâu sang Da Bò Mastrotto Đen.',
+                    'refund_amount' => 0,
+                    'requested_at' => now()->subDays(3),
+                    'approved_at' => now()->subDays(2),
+                    'completed_at' => now()->subDay(),
+                ]
+            );
+        }
+
+        // Order 5: Cancelled Order (Contributes 0₫)
+        Order::firstOrCreate(
+            ['order_code' => 'ORD-202611-005'],
+            [
+                'user_id' => $customer->id,
+                'recipient_name' => 'Hoàng Minh Quân',
+                'phone' => '0977665544',
+                'address' => 'Biệt thự B2-08 Splendora An Khánh, Hoài Đức, Hà Nội',
+                'subtotal' => 16500000,
+                'shipping_fee' => 0,
+                'discount_amount' => 0,
+                'total' => 16500000,
+                'status' => 'cancelled',
+                'payment_method' => 'cod',
+                'payment_status' => 'cancelled',
+                'cancel_reason' => 'Khách hàng dời lịch tân gia nhà mới sang tháng sau',
+                'cancelled_by' => 'customer',
+                'cancelled_at' => now()->subDays(1),
+                'created_at' => now()->subDays(2),
+            ]
+        );
+
+        // Order 6: Delivered + Paid in previous month (October 2026)
+        $ord6 = Order::firstOrCreate(
+            ['order_code' => 'ORD-202610-098'],
+            [
+                'user_id' => $customer->id,
+                'recipient_name' => 'Đỗ Văn Phúc',
+                'phone' => '0945678910',
+                'address' => 'Khu biệt thự Chateau, Phú Mỹ Hưng, Quận 7, TP.HCM',
+                'subtotal' => 30000000,
+                'shipping_fee' => 0,
+                'discount_amount' => 1500000,
+                'total' => 28500000,
+                'status' => 'delivered',
+                'payment_method' => 'vietqr',
+                'payment_status' => 'paid',
+                'completed_at' => now()->subMonth()->startOfMonth()->addDays(15),
+                'created_at' => now()->subMonth()->startOfMonth()->addDays(10),
+            ]
+        );
+        if ($p7 && $ord6->items()->count() === 0) {
+            $ord6->items()->create([
+                'product_id' => $p7->id,
+                'product_name' => $p7->name,
+                'product_image' => $p7->images()->first()?->path,
+                'sku' => $p7->sku,
+                'quantity' => 1,
+                'unit_price' => 30000000,
+                'line_total' => 30000000,
+            ]);
+            $ord6->payments()->create([
+                'method' => 'vietqr',
+                'status' => 'completed',
+                'amount' => 28500000,
+                'paid_at' => now()->subMonth()->startOfMonth()->addDays(10),
+            ]);
+        }
     }
 }

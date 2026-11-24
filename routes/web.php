@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\StorefrontController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -129,31 +131,52 @@ Route::prefix('admin')->name('admin.')->group(function () {
         return redirect()->route('admin.dashboard');
     });
 
-    Route::get('/dashboard', function () {
-        return view('admin.dashboard');
-    })->name('dashboard');
-
-    Route::get('/reports/revenue', function () {
-        return view('admin.reports.revenue');
-    })->name('reports.revenue');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/reports/revenue', [ReportController::class, 'revenue'])->name('reports.revenue');
+    Route::get('/reports/revenue/export', [ReportController::class, 'exportRevenueCsv'])->name('reports.revenue.export');
 
     Route::get('/products', function () {
-        return view('admin.products');
+        return view('admin.placeholder', [
+            'title' => 'Quản Lý Danh Mục & Sản Phẩm Nội Thất',
+            'icon' => 'fas fa-boxes-stacked',
+            'assignedTo' => 'Phụ trách Quản lý Sản phẩm & Tồn kho',
+            'description' => 'Xem danh sách sản phẩm, thêm/sửa/xóa thông số kỹ thuật, quản lý giá bán, kho hàng và tải lên hình ảnh.',
+        ]);
     })->name('products.index');
 
     Route::get('/categories', function () {
-        return view('admin.categories');
+        return view('admin.placeholder', [
+            'title' => 'Quản Lý Danh Mục Nội Thất',
+            'icon' => 'fas fa-tags',
+            'assignedTo' => 'Phụ trách Quản lý Sản phẩm',
+            'description' => 'Tổ chức phân loại danh mục sản phẩm, cấu hình thứ tự hiển thị và phòng trưng bày tương ứng.',
+        ]);
     })->name('categories.index');
 
     Route::get('/orders', function () {
-        return view('admin.orders');
+        return view('admin.placeholder', [
+            'title' => 'Quản Lý Đơn Hàng & Đổi Trả',
+            'icon' => 'fas fa-receipt',
+            'assignedTo' => 'Phụ trách Đơn hàng & Thanh toán',
+            'description' => 'Theo dõi luồng trạng thái đơn hàng (Chuẩn bị -> Vận chuyển -> Đã giao), xử lý khiếu nại và duyệt yêu cầu đổi trả / hoàn tiền.',
+        ]);
     })->name('orders.index');
 
     Route::get('/vouchers', function () {
-        return view('admin.vouchers');
+        return view('admin.placeholder', [
+            'title' => 'Quản Lý Mã Giảm Giá & Voucher',
+            'icon' => 'fas fa-ticket-simple',
+            'assignedTo' => 'Phụ trách Khuyến mãi & Sản phẩm',
+            'description' => 'Thiết lập mã coupon giảm giá theo %, giảm tiền cố định, giới hạn lượt dùng và ngày hết hạn.',
+        ]);
     })->name('vouchers.index');
 
     Route::get('/users', function () {
-        return view('admin.users');
+        return view('admin.placeholder', [
+            'title' => 'Quản Lý Thành Viên & Khách Hàng',
+            'icon' => 'fas fa-users',
+            'assignedTo' => 'Phụ trách Tài khoản & Người dùng',
+            'description' => 'Danh sách tài khoản khách hàng VIP/Guest, phân quyền quản trị viên và lịch sử mua sắm tích điểm.',
+        ]);
     })->name('users.index');
 });

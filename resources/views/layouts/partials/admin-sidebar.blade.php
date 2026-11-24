@@ -5,6 +5,7 @@
         <div class="admin-sidebar-logo-icon"><i class="fas fa-couch"></i></div>
         <div class="admin-sidebar-title">AURA ADMIN</div>
         <span class="admin-sidebar-badge">V2.6</span>
+        <button type="button" class="btn-close btn-close-white d-lg-none ms-auto" id="admin-sidebar-close" aria-label="Đóng menu"></button>
     </div>
 
     {{-- Menu List --}}
