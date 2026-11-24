@@ -26,3 +26,6 @@
 
 /* 8. Aura Living Chatbot Widget */
 @import './chatbot.css';
+
+/* Customer commerce pages */
+@import './modules/customer-commerce.css';
