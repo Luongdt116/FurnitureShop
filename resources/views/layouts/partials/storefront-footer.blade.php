@@ -25,11 +25,11 @@
             <div>
                 <h4 class="footer-col-title">Về AURA LIVING</h4>
                 <ul class="footer-links ps-0">
-                    <li><a href="#">Câu chuyện thương hiệu</a></li>
-                    <li><a href="#">Xưởng sản xuất thủ công</a></li>
-                    <li><a href="#">Dự án căn hộ mẫu 2026</a></li>
-                    <li><a href="#">Kiến thức bài trí Japandi</a></li>
-                    <li><a href="#">Tuyển dụng chuyên viên thiết kế</a></li>
+                    <li><a href="{{ route('about') }}">Câu chuyện thương hiệu</a></li>
+                    <li><a href="{{ route('about') }}">Xưởng sản xuất thủ công</a></li>
+                    <li><a href="{{ route('catalog.index') }}">Dự án căn hộ mẫu 2026</a></li>
+                    <li><a href="{{ route('about') }}">Kiến thức bài trí Japandi</a></li>
+                    <li><a href="{{ route('contact') }}">Tuyển dụng chuyên viên thiết kế</a></li>
                 </ul>
             </div>
 
@@ -37,11 +37,11 @@
             <div>
                 <h4 class="footer-col-title">Chính Sách & Dịch Vụ</h4>
                 <ul class="footer-links ps-0">
-                    <li><a href="#">Chính sách bảo hành kết cấu 5 năm</a></li>
-                    <li><a href="#">Chính sách đổi trả minh bạch 7 ngày</a></li>
-                    <li><a href="#">Vận chuyển & Lắp đặt tận căn hộ</a></li>
-                    <li><a href="#">Bảo mật thông tin & thanh toán an toàn</a></li>
-                    <li><a href="#">Quy trình thẩm định chất lượng</a></li>
+                    <li><a href="{{ route('policy.terms') }}">Chính sách bảo hành kết cấu 5 năm</a></li>
+                    <li><a href="{{ route('policy.returns') }}">Chính sách đổi trả minh bạch 7 ngày</a></li>
+                    <li><a href="{{ route('policy.terms') }}">Vận chuyển & Lắp đặt tận căn hộ</a></li>
+                    <li><a href="{{ route('policy.terms') }}">Bảo mật thông tin & thanh toán an toàn</a></li>
+                    <li><a href="{{ route('policy.returns') }}">Quy trình thẩm định chất lượng</a></li>
                 </ul>
             </div>
 
