@@ -21,7 +21,7 @@ class FurnitureShopSeeder extends Seeder
     public function run(): void
     {
         // 1. Seed Users
-        $admin = User::firstOrCreate(
+        $admin = User::updateOrCreate(
             ['email' => 'admin@auraliving.vn'],
             [
                 'name' => 'Trần Minh Hoàng',
@@ -33,7 +33,7 @@ class FurnitureShopSeeder extends Seeder
             ]
         );
 
-        $customer = User::firstOrCreate(
+        $customer = User::updateOrCreate(
             ['email' => 'customer@auraliving.vn'],
             [
                 'name' => 'Nguyễn Thanh Tùng',

@@ -39,7 +39,7 @@
                 @auth
                     <li><a href="{{ route('account.profile') }}" class="nav-link {{ request()->routeIs('account.*') ? 'active' : '' }}">Tài Khoản & Đơn Mua</a></li>
                 @else
-                    <li><a href="javascript:void(0)" onclick="openLoginModal()" class="nav-link">Đơn Mua & Tài Khoản</a></li>
+                    <li><a href="{{ url('/login') }}" class="nav-link">Đơn Mua & Tài Khoản</a></li>
                 @endauth
             </ul>
         </nav>
@@ -113,10 +113,10 @@
                             <div class="user-email-display">Đăng nhập để nhận ưu đãi VIP</div>
                         </div>
                         <div id="store-dropdown-guest-items">
-                            <a href="javascript:void(0)" onclick="openLoginModal()" class="dropdown-link">
+                            <a href="{{ url('/login') }}" class="dropdown-link">
                                 <i class="fas fa-sign-in-alt"></i> Đăng nhập
                             </a>
-                            <a href="javascript:void(0)" onclick="openRegisterModal()" class="dropdown-link">
+                            <a href="{{ url('/register') }}" class="dropdown-link">
                                 <i class="fas fa-user-plus"></i> Đăng ký tài khoản
                             </a>
                         </div>

@@ -9,6 +9,7 @@
 <a href="{{ route('account.profile') }}" aria-current="{{ $activeTab === 'profile' ? 'page' : 'false' }}" id="account-nav-profile"><i class="fa-regular fa-id-card me-2" aria-hidden="true"></i>Hồ sơ</a>
 <a href="{{ route('account.addresses') }}" aria-current="{{ $activeTab === 'addresses' ? 'page' : 'false' }}" id="account-nav-addresses"><i class="fa-solid fa-location-dot me-2" aria-hidden="true"></i>Địa chỉ giao hàng</a>
 <a href="{{ route('orders.index') }}" aria-current="{{ $activeTab === 'orders' ? 'page' : 'false' }}" id="account-nav-orders"><i class="fa-solid fa-box me-2" aria-hidden="true"></i>Đơn hàng</a>
+<form action="{{ route('logout') }}" method="POST" id="account-logout-form">@csrf<button class="account-page-nav-logout" type="submit" id="account-logout-button"><i class="fa-solid fa-arrow-right-from-bracket me-2" aria-hidden="true"></i>Đăng xuất</button></form>
 </nav></aside>
 <div class="account-page-panel">
 @if ($activeTab === 'profile')

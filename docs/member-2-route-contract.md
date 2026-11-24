@@ -11,9 +11,9 @@
 | DELETE | `/cart` | `cart.clear` | `CartController@clear` |
 | GET | `/checkout` | `checkout.index` | `CheckoutController@index` → `storefront.checkout`; middleware `auth`, guest chuyển tới đăng nhập với intended URL |
 | POST | `/checkout/process` | `checkout.process` | `CheckoutController@store`; middleware `auth` |
-| GET | `/login` | `login` | `AuthController@showLogin` → `storefront.auth.login` |
+| GET | `/login` | `login.show` | `AuthController@showLogin` → `storefront.auth.login` |
 | POST | `/login` | `login.store` | `AuthController@login`; giữ tên POST `login` hiện có nếu cần tương thích các form cũ |
-| GET | `/register` | `register` | `AuthController@showRegister` → `storefront.auth.register` |
+| GET | `/register` | `register.show` | `AuthController@showRegister` → `storefront.auth.register` |
 | POST | `/register` | `register.store` | `AuthController@register`; giữ tên POST `register` hiện có nếu cần tương thích các form cũ |
 | GET | `/forgot-password` | `password.request` | `PasswordResetController@showLinkRequestForm` → `storefront.auth.forgot-password` |
 | POST | `/forgot-password` | `password.email` | `PasswordResetController@sendResetLinkEmail` |

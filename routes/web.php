@@ -74,18 +74,33 @@ Route::post('/newsletter/subscribe', function (Request $request) {
 // SECTION 2: AUTHENTICATION & ACCESS CONTROL (RBAC Ready)
 // =========================================================================
 
+Route::get('/login', function () {
+    return view('storefront.auth.login');
+})->name('login.show');
+
+Route::get('/register', function () {
+    return view('storefront.auth.register');
+})->name('register.show');
+
 Route::post('/login', function (Request $request) {
     $credentials = $request->validate([
         'email' => 'required|email',
         'password' => 'required',
     ]);
 
+    $credentials['is_active'] = true;
+
     if (Auth::attempt($credentials, $request->boolean('remember'))) {
         $request->session()->regenerate();
         if (Auth::user()->role === 'admin') {
-            return redirect()->intended(route('admin.dashboard'))->with('success', 'Chào mừng Quản trị viên!');
+            return redirect()->route('admin.dashboard')->with('success', 'Chào mừng Quản trị viên!');
         }
-        return redirect()->intended(route('home'))->with('success', 'Đăng nhập thành công!');
+        $redirect = $request->input('redirect');
+        if (! is_string($redirect) || ! str_starts_with($redirect, '/') || str_starts_with($redirect, '//')) {
+            $redirect = route('account.profile');
+        }
+
+        return redirect()->intended($redirect)->with('success', 'Đăng nhập thành công!');
     }
 
     return back()->withErrors([
@@ -111,7 +126,12 @@ Route::post('/register', function (Request $request) {
     ]);
 
     Auth::login($user);
-    return redirect()->route('home')->with('success', 'Đăng ký tài khoản thành viên thành công!');
+    $redirect = $request->input('redirect');
+    if (! is_string($redirect) || ! str_starts_with($redirect, '/') || str_starts_with($redirect, '//')) {
+        $redirect = route('account.profile');
+    }
+
+    return redirect()->to($redirect)->with('success', 'Đăng ký tài khoản thành viên thành công!');
 })->name('register');
 
 Route::post('/logout', function (Request $request) {
@@ -199,7 +219,7 @@ Route::get('/orders-lookup', function () {
 // SECTION 5: ADMIN PORTAL & REPORTS (Module 1, Teammate 2 & Teammate 3)
 // =========================================================================
 
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     // 5.1 Admin Root Redirect
     Route::get('/', function () {
         return redirect()->route('admin.dashboard');
