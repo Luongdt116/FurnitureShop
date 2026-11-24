@@ -14,10 +14,16 @@
     }
     
     // Category & Room
-    $catName = is_array($product) 
-        ? ($product['category_name'] ?? $product['category']['name'] ?? 'Nội thất cao cấp') 
-        : ($product->category->name ?? 'Nội thất cao cấp');
-    $roomType = is_array($product) ? ($product['room_type'] ?? 'Không gian sống') : ($product->room_type ?? 'Không gian sống');
+    if (is_array($product)) {
+        $catName = $product['category_name'] ?? $product['category']['name'] ?? 'Nội thất cao cấp';
+        $roomType = $product['room_type'] ?? 'Không gian sống';
+    } elseif ($product instanceof \Illuminate\Database\Eloquent\Model) {
+        $catName = $product->category->name ?? 'Nội thất cao cấp';
+        $roomType = $product->room_type ?? 'Không gian sống';
+    } else {
+        $catName = $product->category_name ?? ($product->category->name ?? 'Nội thất cao cấp');
+        $roomType = $product->room_type ?? 'Không gian sống';
+    }
     
     // Image
     $image = 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80';
@@ -27,10 +33,16 @@
         } elseif (!empty($product['image'])) {
             $image = $product['image'];
         }
-    } else {
+    } elseif ($product instanceof \Illuminate\Database\Eloquent\Model) {
         if ($product->relationLoaded('images') && $product->images->isNotEmpty()) {
             $primaryImg = $product->images->firstWhere('is_primary', true) ?? $product->images->first();
             $image = asset($primaryImg->path);
+        } elseif (!empty($product->image)) {
+            $image = asset($product->image);
+        }
+    } else {
+        if (!empty($product->images) && is_array($product->images) && !empty($product->images[0])) {
+            $image = $product->images[0];
         } elseif (!empty($product->image)) {
             $image = asset($product->image);
         }

@@ -22,6 +22,9 @@
 </head>
 <body class="admin-body" id="admin-body">
 
+    {{-- Backdrop for Mobile Sidebar --}}
+    <div class="admin-sidebar-backdrop" id="admin-sidebar-backdrop"></div>
+
     {{-- 1. Admin Sidebar Navigation --}}
     @include('layouts.partials.admin-sidebar')
 
@@ -51,6 +54,36 @@
             const modal = document.getElementById(modalId);
             if (modal) modal.classList.add('active');
         }
+
+        // Responsive Admin Sidebar Toggle
+        document.addEventListener('DOMContentLoaded', function () {
+            const sidebar = document.getElementById('admin-sidebar');
+            const toggleBtn = document.getElementById('admin-sidebar-toggle');
+            const closeBtn = document.getElementById('admin-sidebar-close');
+            const backdrop = document.getElementById('admin-sidebar-backdrop');
+
+            function toggleSidebar() {
+                if (!sidebar) return;
+                const isOpen = sidebar.classList.toggle('active');
+                if (backdrop) backdrop.classList.toggle('active', isOpen);
+                document.body.classList.toggle('sidebar-open', isOpen);
+            }
+
+            function closeSidebar() {
+                if (!sidebar) return;
+                sidebar.classList.remove('active');
+                if (backdrop) backdrop.classList.remove('active');
+                document.body.classList.remove('sidebar-open');
+            }
+
+            if (toggleBtn) toggleBtn.addEventListener('click', toggleSidebar);
+            if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+            if (backdrop) backdrop.addEventListener('click', closeSidebar);
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') closeSidebar();
+            });
+        });
     </script>
 
     @stack('scripts')

@@ -177,6 +177,69 @@
             if (cartOverlay && e.target === cartOverlay) {
                 cartOverlay.classList.remove('active');
             }
+
+            const searchInput = document.getElementById('store-header-search-input');
+            const suggestionsBox = document.getElementById('store-search-suggestions');
+            if (searchInput && suggestionsBox && !searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+                suggestionsBox.style.display = 'none';
+            }
+        });
+
+        // Live Search Suggestions Dropdown
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('store-header-search-input');
+            const suggestionsBox = document.getElementById('store-search-suggestions');
+            let searchTimeout = null;
+
+            if (searchInput && suggestionsBox) {
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    const query = this.value.trim();
+                    if (query.length < 2) {
+                        suggestionsBox.style.display = 'none';
+                        suggestionsBox.innerHTML = '';
+                        return;
+                    }
+
+                    searchTimeout = setTimeout(function() {
+                        fetch(`{{ route('catalog.suggestions') }}?q=${encodeURIComponent(query)}`)
+                            .then(res => res.json())
+                            .then(items => {
+                                if (!items || items.length === 0) {
+                                    suggestionsBox.innerHTML = `
+                                        <div class="suggestion-header">Gợi ý sản phẩm</div>
+                                        <div class="p-2 text-muted small">Không tìm thấy sản phẩm phù hợp</div>
+                                    `;
+                                } else {
+                                    let html = `<div class="suggestion-header">Sản phẩm gợi ý (${items.length})</div>`;
+                                    items.forEach(item => {
+                                        html += `
+                                            <div class="suggestion-item" onclick="window.location.href='${item.url}'">
+                                                <img src="${item.image}" alt="${item.name}">
+                                                <div class="flex-grow-1">
+                                                    <div class="suggestion-name">${item.name}</div>
+                                                    <div class="suggestion-price">${item.price}</div>
+                                                </div>
+                                            </div>
+                                        `;
+                                    });
+                                    suggestionsBox.innerHTML = html;
+                                }
+                                suggestionsBox.style.display = 'block';
+                            })
+                            .catch(() => {
+                                suggestionsBox.style.display = 'none';
+                            });
+                    }, 250);
+                });
+            }
+
+            // Auto open cart drawer if requested by action
+            @if(session('open_cart'))
+                setTimeout(function() {
+                    toggleCartDrawer(true);
+                }, 250);
+            @endif
         });
     </script>
 
