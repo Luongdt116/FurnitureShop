@@ -160,7 +160,7 @@ Route::post('/register', function (Request $request) {
         $redirect = route('account.profile');
     }
 
-    return redirect()->to($redirect)->with('success', 'Đăng ký tài khoản thành viên thành công!');
+    return redirect()->intended($redirect)->with('success', 'Đăng ký tài khoản thành viên thành công!');
 })->name('register');
 
 Route::post('/logout', function (Request $request) {
@@ -204,13 +204,20 @@ Route::post('/cart/coupon/remove', function () {
 })->name('cart.coupon.remove');
 
 // Checkout Process
-Route::get('/checkout', function () {
-    return view('storefront.checkout');
-})->name('checkout.index');
+Route::get('/checkout', function (Request $request, CartService $cartService) {
+    $cartItems = $cartService->visibleItems(
+        $request->user(),
+        $request->session()->getId(),
+        $request->session()->get('pending_guest_cart_session_id')
+    );
+    $subtotal = $cartItems->sum(fn ($item) => ($item->product?->final_price ?? $item->product?->price ?? 0) * $item->quantity);
+
+    return view('storefront.checkout', compact('cartItems', 'subtotal'));
+})->middleware('auth')->name('checkout.index');
 
 Route::post('/checkout/process', function (Request $request) {
     return redirect()->route('home')->with('success', 'Đặt hàng thành công! Đơn hàng đang được chuẩn bị.');
-})->name('checkout.process');
+})->middleware('auth')->name('checkout.process');
 
 
 // =========================================================================
