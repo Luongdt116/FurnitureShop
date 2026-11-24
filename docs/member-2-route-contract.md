@@ -6,9 +6,10 @@
 |---|---|---|---|
 | GET | `/cart` | `cart.index` | `CartController@index` → `storefront.cart` |
 | POST | `/cart/add` | `cart.add` | `CartController@store` |
+| PATCH | `/cart/products/{product}` | `cart.product.update` | `CartController@updateProduct` (sets visible total for drawer) |
 | PATCH | `/cart/items/{cart}` | `cart.update` | `CartController@update` |
 | DELETE | `/cart/items/{cart}` | `cart.destroy` | `CartController@destroy` |
-| DELETE | `/cart` | `cart.clear` | `CartController@clear` |
+| POST | `/cart/clear` | `cart.clear` | `CartController@clear` |
 | GET | `/checkout` | `checkout.index` | `CheckoutController@index` → `storefront.checkout`; middleware `auth`, guest chuyển tới đăng nhập với intended URL |
 | POST | `/checkout/process` | `checkout.process` | `CheckoutController@store`; middleware `auth` |
 | GET | `/login` | `login.show` | `AuthController@showLogin` → `storefront.auth.login` |

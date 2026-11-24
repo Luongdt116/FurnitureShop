@@ -2,10 +2,13 @@
 
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\StorefrontController;
+use App\Services\CartService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\ValidationException;
 
 /*
 |--------------------------------------------------------------------------
@@ -83,6 +86,7 @@ Route::get('/register', function () {
 })->name('register.show');
 
 Route::post('/login', function (Request $request) {
+    $guestSessionId = $request->session()->get('pending_guest_cart_session_id') ?? $request->session()->getId();
     $credentials = $request->validate([
         'email' => 'required|email',
         'password' => 'required',
@@ -92,6 +96,18 @@ Route::post('/login', function (Request $request) {
 
     if (Auth::attempt($credentials, $request->boolean('remember'))) {
         $request->session()->regenerate();
+
+        try {
+            app(CartService::class)->mergeGuestCart(Auth::user(), $guestSessionId);
+            $request->session()->forget('pending_guest_cart_session_id');
+        } catch (ValidationException $exception) {
+            $request->session()->put('pending_guest_cart_session_id', $guestSessionId);
+
+            return redirect()->route('cart.index')
+                ->withErrors($exception->errors())
+                ->with('warning', 'Đã đăng nhập nhưng giỏ khách chưa thể gộp hoàn toàn. Các sản phẩm vẫn được giữ trong giỏ để bạn điều chỉnh.');
+        }
+
         if (Auth::user()->role === 'admin') {
             return redirect()->route('admin.dashboard')->with('success', 'Chào mừng Quản trị viên!');
         }
@@ -109,6 +125,7 @@ Route::post('/login', function (Request $request) {
 })->name('login');
 
 Route::post('/register', function (Request $request) {
+    $guestSessionId = $request->session()->get('pending_guest_cart_session_id') ?? $request->session()->getId();
     $validated = $request->validate([
         'name' => 'required|string|max:150',
         'email' => 'required|email|unique:users,email',
@@ -126,6 +143,18 @@ Route::post('/register', function (Request $request) {
     ]);
 
     Auth::login($user);
+    $request->session()->regenerate();
+
+    try {
+        app(CartService::class)->mergeGuestCart($user, $guestSessionId);
+        $request->session()->forget('pending_guest_cart_session_id');
+    } catch (ValidationException $exception) {
+        $request->session()->put('pending_guest_cart_session_id', $guestSessionId);
+
+        return redirect()->route('cart.index')
+            ->withErrors($exception->errors())
+            ->with('warning', 'Tài khoản đã được tạo nhưng giỏ khách chưa thể gộp hoàn toàn. Các sản phẩm vẫn được giữ trong giỏ để bạn điều chỉnh.');
+    }
     $redirect = $request->input('redirect');
     if (! is_string($redirect) || ! str_starts_with($redirect, '/') || str_starts_with($redirect, '//')) {
         $redirect = route('account.profile');
@@ -146,13 +175,14 @@ Route::post('/logout', function (Request $request) {
 // SECTION 3: CART, CHECKOUT & TRANSACTIONS (Module 1 & Teammate 3)
 // =========================================================================
 
-Route::get('/cart', function () {
-    return view('storefront.cart');
-})->name('cart.index');
+Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 
-Route::post('/cart/add', [StorefrontController::class, 'addToCart'])->name('cart.add');
-Route::post('/cart/remove/{id}', [StorefrontController::class, 'removeFromCart'])->name('cart.remove');
-Route::post('/cart/clear', [StorefrontController::class, 'clearCart'])->name('cart.clear');
+Route::post('/cart/add', [CartController::class, 'store'])->name('cart.add');
+Route::patch('/cart/products/{product}', [CartController::class, 'updateProduct'])->name('cart.product.update');
+Route::patch('/cart/items/{cart}', [CartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/items/{cart}', [CartController::class, 'destroy'])->name('cart.destroy');
+Route::post('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
+Route::post('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
 
 // Vouchers & Coupons in Cart
 Route::post('/cart/coupon/apply', function (Request $request) {

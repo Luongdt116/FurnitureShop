@@ -67,3 +67,4 @@ Tài liệu chi tiết hướng dẫn Teammate 2 và Teammate 3 cách tích hợ
 - **Khách hàng mẫu (Customer)**: `customer@auraliving.vn` | Mật khẩu: `password`
 
 Nếu database chưa có hai tài khoản mẫu, tạo riêng chúng bằng `php artisan db:seed --class=DemoAccountsSeeder`.
+Để tạo danh mục và năm sản phẩm mẫu cho kiểm tra giỏ hàng, chạy `php artisan db:seed --class=DemoCatalogSeeder`.

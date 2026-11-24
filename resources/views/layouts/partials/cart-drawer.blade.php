@@ -62,6 +62,16 @@
                                         {{ number_format($item['price'], 0, ',', '.') }}₫ <span class="text-muted fw-normal" style="font-size: 0.75rem;">x {{ $item['quantity'] }}</span>
                                     </span>
                                 </div>
+                                <form action="{{ route('cart.product.update', $item['id']) }}" method="POST" class="d-flex align-items-center gap-2 mt-2">
+                                    @csrf
+                                    @method('PATCH')
+                                    <div class="cart-drawer-quantity" data-cart-quantity>
+                                        <button type="button" aria-label="Giảm số lượng" data-cart-quantity-step="-1">−</button>
+                                        <input type="number" name="quantity" min="1" max="{{ max(1, $item['stock']) }}" value="{{ $item['quantity'] }}" aria-label="Số lượng {{ $item['name'] }}" required>
+                                        <button type="button" aria-label="Tăng số lượng" data-cart-quantity-step="1">+</button>
+                                    </div>
+                                    <button type="submit" class="btn btn-outline btn-sm">Cập nhật</button>
+                                </form>
                             </div>
 
                             <form action="{{ route('cart.remove', $item['id']) }}" method="POST" class="m-0 p-0 flex-shrink-0">
