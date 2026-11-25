@@ -96,4 +96,4 @@ New actions should follow the current English route path style and preserve exis
 
 ## Handoff status
 
-The shared storefront/admin layouts, design tokens, sidebar, common Blade components, and baseline route names are present in the project. The customer order/return/review and admin order/user routes use the agreed route names. Inventory side effects for cancellation and completed returns remain an integration responsibility of the inventory owner.
+The shared storefront/admin layouts, design tokens, sidebar, common Blade components, and baseline route names are present in the project. The customer order/return/review and admin order/user routes use the agreed route names. Completed returns restock through `ReturnInventoryService` after inspection; cancellation stock adjustments remain outside `CancellationService` and require a separate inventory integration.
