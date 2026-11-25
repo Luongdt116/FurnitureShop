@@ -56,6 +56,12 @@ class CheckoutController extends Controller
         $request->session()->forget('pending_guest_cart_session_id');
         $request->session()->forget('cart');
 
-        return redirect()->route('orders.index')->with('success', "Đặt hàng thành công. Mã đơn: {$order->order_code}");
+        $message = "Đặt hàng thành công. Mã đơn: {$order->order_code}";
+        if ($order->payment_method !== 'cod' && $order->payment_expires_at) {
+            $deadline = $order->payment_expires_at->copy()->timezone('Asia/Ho_Chi_Minh')->format('H:i, d/m/Y');
+            $message .= " Vui lòng thanh toán trong 30 phút, trước {$deadline}.";
+        }
+
+        return redirect()->route('orders.index')->with('success', $message);
     }
 }

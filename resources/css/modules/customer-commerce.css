@@ -46,6 +46,9 @@
 .account-page-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:0 16px; }
 .account-page-order { padding:18px 0; border-bottom:1px solid var(--border-color); }
 .account-page-order:last-child { border-bottom:0; }
+.account-payment-deadline { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px 16px; margin-top:14px; padding:12px 14px; border:1px solid var(--accent); border-radius:var(--radius-sm); background:var(--accent-light); color:var(--text-primary); }
+.account-payment-deadline strong { color:var(--status-danger); font-variant-numeric:tabular-nums; }
+.account-payment-deadline.is-expired { border-color:var(--status-danger); background:var(--status-danger-bg); }
 .auth-page { min-height:56vh; display:grid; place-items:center; }
 .auth-page-card { width:min(100%,520px); padding:32px; }
 .auth-page-intro { color:var(--text-secondary); margin-bottom:24px; }

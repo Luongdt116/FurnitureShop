@@ -227,6 +227,11 @@ Route::middleware('auth')->group(function () {
         return view('storefront.account', ['tab' => 'orders', 'orders' => $orders]);
     })->name('orders.index');
 
+    Route::post('/orders/{id}/cancel', [\App\Http\Controllers\OrderCancellationController::class, 'customer'])
+        ->whereNumber('id')->name('orders.cancel');
+    Route::post('/orders/{id}/expire', [\App\Http\Controllers\OrderCancellationController::class, 'expireCustomer'])
+        ->whereNumber('id')->name('orders.expire');
+
     Route::post('/orders/{id}/return-request', function ($id, Request $request) {
         return back()->with('success', 'Yêu cầu đổi trả/hoàn tiền đã được gửi. Bộ phận CSKH sẽ liên hệ trong 24h.');
     })->name('orders.return.request');
@@ -309,6 +314,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
             'routeTarget' => 'App\Http\Controllers\Admin\OrderController@show',
         ]);
     })->name('orders.show');
+
+    Route::post('/orders/{id}/cancel', [\App\Http\Controllers\OrderCancellationController::class, 'admin'])
+        ->whereNumber('id')->name('orders.cancel');
 
     // 5.6 Vouchers & Promotion Management (Teammate 3 Slot)
     Route::get('/vouchers', function () {
