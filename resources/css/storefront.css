@@ -1882,3 +1882,112 @@
     justify-content: space-between;
     font-size: 0.85rem;
 }
+
+/* ==========================================================================
+   Aura Living Custom Pagination
+   ========================================================================== */
+.aura-pagination-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 36px 0 16px;
+    margin-top: 32px;
+    border-top: 1px solid var(--border-color);
+}
+
+.aura-pagination-counter {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    letter-spacing: 0.2px;
+}
+.aura-pagination-counter strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+.aura-pagination-counter strong.text-accent {
+    color: var(--accent) !important;
+}
+
+.aura-pagination-nav {
+    display: flex;
+    justify-content: center;
+}
+
+.aura-pagination-list {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.aura-page-item {
+    display: inline-block;
+}
+
+.aura-page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    height: 44px;
+    padding: 0 14px;
+    border-radius: var(--radius-md);
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+    transition: all var(--transition-fast);
+    cursor: pointer;
+    user-select: none;
+}
+
+.aura-page-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-subtle);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(200, 155, 83, 0.15);
+}
+
+.aura-page-item.active .aura-page-btn {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(28, 25, 23, 0.25);
+    transform: translateY(-1px);
+    cursor: default;
+}
+
+.aura-page-item.disabled .aura-page-btn {
+    background: var(--bg-subtle);
+    border-color: var(--border-color);
+    color: #b8b0a8;
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.aura-page-btn.dots {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    cursor: default;
+    color: var(--text-muted);
+}
+.aura-page-btn.dots:hover {
+    transform: none;
+    border-color: transparent;
+    background: transparent;
+    color: var(--text-muted);
+}
+
