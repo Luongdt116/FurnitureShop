@@ -63,8 +63,8 @@ Tài liệu chi tiết hướng dẫn Teammate 2 và Teammate 3 cách tích hợ
 ---
 
 ## 5. TÀI KHOẢN MẪU ĐỂ KIỂM THỬ (DEMO CREDENTIALS)
-- **Quản trị viên (Admin)**: `admin@auraliving.vn` | Mật khẩu: `password`
-- **Khách hàng mẫu (Customer)**: `customer@auraliving.vn` | Mật khẩu: `password`
+- **Quản trị viên (Admin)**: `admin@auraliving.vn` | Mật khẩu: `admin123`
+- **Khách hàng mẫu (Customer)**: `customer@gmail.com` | Mật khẩu: `password123`
 
 Nếu database chưa có hai tài khoản mẫu, tạo riêng chúng bằng `php artisan db:seed --class=DemoAccountsSeeder`.
 Để tạo danh mục và năm sản phẩm mẫu cho kiểm tra giỏ hàng, chạy `php artisan db:seed --class=DemoCatalogSeeder`.

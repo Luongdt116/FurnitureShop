@@ -6,7 +6,7 @@
 @if ($errors->any())<div class="alert alert-danger" role="alert"><ul class="mb-0">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 @guest <div class="alert alert-info" role="status">Vui lòng <a href="{{ url('/login?redirect='.urlencode(url('/checkout'))) }}">đăng nhập</a> để tiếp tục thanh toán.</div> @endguest
 @php($items = $cartItems ?? collect())
-<form action="{{ route('checkout.process') }}" method="POST" id="checkout-form">@csrf
+<form action="{{ route('checkout.process') }}" method="POST" id="checkout-form">@csrf<input type="hidden" name="idempotency_key" value="{{ $idempotencyKey ?? old('idempotency_key') }}">
 <div class="checkout-page-layout"><div>
 <div class="checkout-page-card"><h2><i class="fa-regular fa-user me-2" aria-hidden="true"></i>Thông tin nhận hàng</h2><div class="checkout-page-address">
 <div class="checkout-page-field"><label class="form-label" for="checkout-recipient">Họ tên người nhận</label><input class="form-control form-input" id="checkout-recipient" name="recipient_name" value="{{ old('recipient_name', auth()->user()->name ?? '') }}" autocomplete="name" required></div>

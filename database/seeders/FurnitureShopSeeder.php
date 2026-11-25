@@ -13,37 +13,15 @@ use App\Models\ReturnRequest;
 use App\Models\Review;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class FurnitureShopSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Seed Users
-        $admin = User::updateOrCreate(
-            ['email' => 'admin@auraliving.vn'],
-            [
-                'name' => 'Trần Minh Hoàng',
-                'password' => Hash::make('password'),
-                'phone' => '0908123456',
-                'role' => 'admin',
-                'avatar' => 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-                'is_active' => true,
-            ]
-        );
-
-        $customer = User::updateOrCreate(
-            ['email' => 'customer@auraliving.vn'],
-            [
-                'name' => 'Nguyễn Thanh Tùng',
-                'password' => Hash::make('password'),
-                'phone' => '0912345678',
-                'role' => 'customer',
-                'avatar' => 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-                'is_active' => true,
-            ]
-        );
+        // 1. Seed Users with the same credentials as the dedicated demo account seeder.
+        $this->call(DemoAccountsSeeder::class);
+        $admin = User::where('email', 'admin@auraliving.vn')->firstOrFail();
+        $customer = User::where('email', 'customer@gmail.com')->firstOrFail();
 
         // 2. Seed Categories
         $categoriesData = [

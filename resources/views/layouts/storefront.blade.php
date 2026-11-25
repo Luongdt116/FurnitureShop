@@ -64,14 +64,14 @@
             @csrf
             <div class="form-group mb-3">
                 <label for="login-email" class="form-label">Email hoặc Số điện thoại <span class="required text-danger">*</span></label>
-                <input id="login-email" name="email" class="form-control form-input" type="email" required placeholder="name@example.com" value="{{ old('email', 'customer@auraliving.vn') }}">
+                <input id="login-email" name="email" class="form-control form-input" type="email" required placeholder="name@example.com" value="{{ old('email', 'customer@gmail.com') }}">
             </div>
             <div class="form-group mb-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <label for="login-password" class="form-label mb-0">Mật khẩu <span class="required text-danger">*</span></label>
                     <a href="javascript:void(0)" onclick="openForgotModal()" style="font-size: 0.8rem; color: var(--accent);">Quên mật khẩu?</a>
                 </div>
-                <input id="login-password" name="password" class="form-control form-input mt-1" type="password" required value="password">
+                <input id="login-password" name="password" class="form-control form-input mt-1" type="password" required value="password123">
             </div>
             <label class="d-flex align-items-center gap-2 mb-4" style="font-size: 0.85rem; cursor: pointer;">
                 <input type="checkbox" name="remember" checked> Ghi nhớ đăng nhập 30 ngày (Remember Me)
@@ -158,10 +158,10 @@
             const passInput = document.getElementById('login-password');
             if (role === 'admin') {
                 if (emailInput) emailInput.value = 'admin@auraliving.vn';
-                if (passInput) passInput.value = 'password';
+                if (passInput) passInput.value = 'admin123';
             } else {
-                if (emailInput) emailInput.value = 'customer@auraliving.vn';
-                if (passInput) passInput.value = 'password';
+                if (emailInput) emailInput.value = 'customer@gmail.com';
+                if (passInput) passInput.value = 'password123';
             }
         }
 

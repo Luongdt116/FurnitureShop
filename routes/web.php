@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\StorefrontController;
 use App\Services\CartService;
 use Illuminate\Http\Request;
@@ -204,20 +205,8 @@ Route::post('/cart/coupon/remove', function () {
 })->name('cart.coupon.remove');
 
 // Checkout Process
-Route::get('/checkout', function (Request $request, CartService $cartService) {
-    $cartItems = $cartService->visibleItems(
-        $request->user(),
-        $request->session()->getId(),
-        $request->session()->get('pending_guest_cart_session_id')
-    );
-    $subtotal = $cartItems->sum(fn ($item) => ($item->product?->final_price ?? $item->product?->price ?? 0) * $item->quantity);
-
-    return view('storefront.checkout', compact('cartItems', 'subtotal'));
-})->middleware('auth')->name('checkout.index');
-
-Route::post('/checkout/process', function (Request $request) {
-    return redirect()->route('home')->with('success', 'Đặt hàng thành công! Đơn hàng đang được chuẩn bị.');
-})->middleware('auth')->name('checkout.process');
+Route::get('/checkout', [CheckoutController::class, 'index'])->middleware('auth')->name('checkout.index');
+Route::post('/checkout/process', [CheckoutController::class, 'store'])->middleware('auth')->name('checkout.process');
 
 
 // =========================================================================
@@ -233,8 +222,9 @@ Route::middleware('auth')->group(function () {
         return view('storefront.account', ['tab' => 'addresses']);
     })->name('account.addresses');
 
-    Route::get('/orders', function () {
-        return view('storefront.account', ['tab' => 'orders']);
+    Route::get('/orders', function (Request $request) {
+        $orders = $request->user()->orders()->with('items')->latest()->get();
+        return view('storefront.account', ['tab' => 'orders', 'orders' => $orders]);
     })->name('orders.index');
 
     Route::post('/orders/{id}/return-request', function ($id, Request $request) {
