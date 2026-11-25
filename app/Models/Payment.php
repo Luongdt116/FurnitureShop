@@ -18,8 +18,23 @@ class Payment extends Model
         'amount',
         'transaction_code',
         'paid_at',
+        'payment_expires_at',
         'refunded_at',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Payment $payment): void {
+            $onlineMethods = ['online_demo', 'vnpay', 'vietqr'];
+            $status = $payment->status ?? 'pending';
+
+            if (in_array($payment->method, $onlineMethods, true)
+                && $status === 'pending'
+                && ! $payment->payment_expires_at) {
+                $payment->payment_expires_at = now()->addMinutes(30);
+            }
+        });
+    }
 
     protected function casts(): array
     {

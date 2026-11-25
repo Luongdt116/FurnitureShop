@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Services\CancellationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class OrderController extends Controller
@@ -43,13 +44,27 @@ class OrderController extends Controller
             ->orders()
             ->with([
                 'items.product',
+                'items.review',
                 'payments' => fn ($query) => $query->latest(),
                 'statusHistories.changedBy',
+                'returnRequests.items.orderItem',
             ])
             ->whereKey($order->getKey())
             ->firstOrFail();
 
-        return view('storefront.orders.show', compact('order'));
+        $alreadyRequested = DB::table('return_request_items')
+            ->join('return_requests', 'return_requests.id', '=', 'return_request_items.return_request_id')
+            ->where('return_requests.order_id', $order->id)
+            ->whereNotIn('return_requests.status', ['rejected', 'cancelled'])
+            ->select('return_request_items.order_item_id', DB::raw('SUM(return_request_items.quantity) as requested_quantity'))
+            ->groupBy('return_request_items.order_item_id')
+            ->pluck('requested_quantity', 'order_item_id');
+
+        $returnableQuantities = $order->items->mapWithKeys(fn ($item) => [
+            $item->id => max(0, $item->quantity - (int) ($alreadyRequested[$item->id] ?? 0)),
+        ]);
+
+        return view('storefront.orders.show', compact('order', 'returnableQuantities'));
     }
 
     public function cancel(Request $request, Order $order): RedirectResponse
@@ -66,11 +81,7 @@ class OrderController extends Controller
             ->whereKey($order->getKey())
             ->firstOrFail();
 
-        if (! class_exists(CancellationService::class)) {
-            return back()->with('error', 'Chức năng hủy đơn đang được kết nối với dịch vụ xử lý. Vui lòng thử lại sau.');
-        }
-
-        // The service owns cancellation eligibility, status history, payment handling, and stock effects.
+        // The service owns cancellation eligibility, status history, and pending payment handling.
         app(CancellationService::class)->cancel($order, $validated['reason'], $request->user(), 'customer');
 
         return redirect()

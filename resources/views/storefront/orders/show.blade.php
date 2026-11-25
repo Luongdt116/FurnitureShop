@@ -149,6 +149,107 @@
                     </div>
                 </section>
 
+                @if ($order->status === 'delivered')
+                    <section class="order-detail-panel" id="return-create-panel">
+                        <div class="order-panel-heading">
+                            <div>
+                                <span class="section-eyebrow">Hỗ trợ sau mua hàng</span>
+                                <h2>Đổi trả hoặc hoàn tiền</h2>
+                            </div>
+                            <a href="{{ route('orders.returns.index', $order) }}" class="btn btn-ghost btn-sm" id="return-view-all">Yêu cầu đã gửi</a>
+                        </div>
+                        <p class="text-muted small">Chọn sản phẩm và số lượng. Có thể gửi nhiều yêu cầu riêng cho cùng một đơn hàng.</p>
+                        <form action="{{ route('orders.returns.store', $order) }}" method="POST" enctype="multipart/form-data" id="return-form">
+                            @csrf
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-5">
+                                    <label class="form-label" for="return-type">Hình thức yêu cầu <span class="text-danger">*</span></label>
+                                    <select name="return_type" id="return-type" class="form-select form-input" required>
+                                        <option value="refund" @selected(old('return_type') === 'refund')>Hoàn tiền</option>
+                                        <option value="exchange" @selected(old('return_type') === 'exchange')>Đổi sản phẩm</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-7">
+                                    <label class="form-label" for="return-evidence">Ảnh bằng chứng (không bắt buộc)</label>
+                                    <input type="file" name="evidence" id="return-evidence" class="form-control form-input" accept="image/jpeg,image/png,image/webp">
+                                </div>
+                            </div>
+
+                            <div class="return-select-items mb-3">
+                                @foreach ($order->items as $index => $item)
+                                    <div class="return-select-item" id="return-select-item-{{ $item->id }}">
+                                        <div>
+                                            <strong>{{ $item->product_name }}</strong>
+                                            <span>Còn có thể yêu cầu: {{ $returnableQuantities[$item->id] ?? 0 }} / {{ $item->quantity }}</span>
+                                        </div>
+                                        <input type="hidden" name="items[{{ $index }}][order_item_id]" value="{{ $item->id }}">
+                                        <label for="return-quantity-{{ $item->id }}" class="visually-hidden">Số lượng đổi/trả cho {{ $item->product_name }}</label>
+                                        <input type="number" name="items[{{ $index }}][quantity]" id="return-quantity-{{ $item->id }}" class="form-control form-input return-quantity-input" min="0" max="{{ $returnableQuantities[$item->id] ?? 0 }}" value="{{ old("items.$index.quantity", 0) }}" aria-describedby="return-quantity-help-{{ $item->id }}">
+                                        <small id="return-quantity-help-{{ $item->id }}">0 = không chọn</small>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            <label for="return-reason" class="form-label">Lý do đổi/trả <span class="text-danger">*</span></label>
+                            <textarea name="reason" id="return-reason" class="form-control form-textarea mb-3" rows="4" maxlength="5000" required placeholder="Mô tả lý do bạn muốn đổi hoặc trả sản phẩm">{{ old('reason') }}</textarea>
+                            <button type="submit" class="btn btn-accent" id="return-submit">
+                                <i class="fas fa-paper-plane"></i> Gửi yêu cầu
+                            </button>
+                        </form>
+                    </section>
+
+                    <section class="order-detail-panel" id="review-create-panel">
+                        <div class="order-panel-heading">
+                            <div><span class="section-eyebrow">Chia sẻ trải nghiệm</span><h2>Đánh giá sản phẩm</h2></div>
+                        </div>
+                        <div class="review-order-items">
+                            @foreach ($order->items as $item)
+                                <article class="review-order-item" id="review-order-item-{{ $item->id }}">
+                                    <div class="review-order-item-heading">
+                                        <strong>{{ $item->product_name }}</strong>
+                                        @if ($item->review)
+                                            <x-badge variant="success">Đã đánh giá</x-badge>
+                                        @endif
+                                    </div>
+                                    @if ($item->review)
+                                        <p class="mb-1" aria-label="{{ $item->review->rating }} trên 5 sao">
+                                            @for ($star = 1; $star <= 5; $star++)
+                                                <i class="{{ $star <= $item->review->rating ? 'fas' : 'far' }} fa-star review-star"></i>
+                                            @endfor
+                                        </p>
+                                        @if ($item->review->comment)<p class="text-muted mb-1">{{ $item->review->comment }}</p>@endif
+                                        @if ($item->review->admin_reply)<div class="review-admin-reply"><strong>Phản hồi từ cửa hàng</strong><p class="mb-0">{{ $item->review->admin_reply }}</p></div>@endif
+                                    @else
+                                        <form action="{{ route('reviews.store', [$order, $item]) }}" method="POST" enctype="multipart/form-data" class="review-form" id="review-form-{{ $item->id }}">
+                                            @csrf
+                                            <div class="row g-3 align-items-end">
+                                                <div class="col-sm-4">
+                                                    <label for="review-rating-{{ $item->id }}" class="form-label">Số sao</label>
+                                                    <select name="rating" id="review-rating-{{ $item->id }}" class="form-select form-input" required>
+                                                        <option value="">Chọn sao</option>
+                                                        @for ($rating = 5; $rating >= 1; $rating--)
+                                                            <option value="{{ $rating }}">{{ $rating }} sao</option>
+                                                        @endfor
+                                                    </select>
+                                                </div>
+                                                <div class="col-sm-8">
+                                                    <label for="review-image-{{ $item->id }}" class="form-label">Ảnh (không bắt buộc)</label>
+                                                    <input type="file" name="image" id="review-image-{{ $item->id }}" class="form-control form-input" accept="image/jpeg,image/png,image/webp">
+                                                </div>
+                                                <div class="col-12">
+                                                    <label for="review-comment-{{ $item->id }}" class="form-label">Nhận xét</label>
+                                                    <textarea name="comment" id="review-comment-{{ $item->id }}" class="form-control form-textarea" rows="3" maxlength="5000" placeholder="Chia sẻ cảm nhận của bạn"></textarea>
+                                                </div>
+                                                <div class="col-12"><button type="submit" class="btn btn-outline btn-sm" id="review-submit-{{ $item->id }}">Gửi đánh giá</button></div>
+                                            </div>
+                                        </form>
+                                    @endif
+                                </article>
+                            @endforeach
+                        </div>
+                    </section>
+                @endif
+
                 <section class="order-detail-panel" id="tracking-history-panel">
                     <div class="order-panel-heading">
                         <div>

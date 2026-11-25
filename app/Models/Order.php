@@ -48,7 +48,6 @@ class Order extends Model
             'confirmed_at' => 'datetime',
             'completed_at' => 'datetime',
             'cancelled_at' => 'datetime',
-            'payment_expires_at' => 'datetime',
         ];
     }
 

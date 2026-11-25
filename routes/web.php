@@ -1,9 +1,13 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\StorefrontController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\ReturnRequestController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -80,6 +84,7 @@ Route::post('/login', function (Request $request) {
         'email' => 'required|email',
         'password' => 'required',
     ]);
+    $credentials['is_active'] = true;
 
     if (Auth::attempt($credentials, $request->boolean('remember'))) {
         $request->session()->regenerate();
@@ -168,7 +173,7 @@ Route::post('/checkout/process', function (Request $request) {
 // SECTION 4: CUSTOMER PORTAL, REVIEWS & RETURNS (Teammate 3)
 // =========================================================================
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/account/profile', function () {
         return view('storefront.account', ['tab' => 'profile']);
     })->name('account.profile');
@@ -177,23 +182,13 @@ Route::middleware('auth')->group(function () {
         return view('storefront.account', ['tab' => 'addresses']);
     })->name('account.addresses');
 
-<<<<<<< HEAD
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
-=======
-    Route::get('/orders', function () {
-        return view('storefront.account', ['tab' => 'orders']);
-    })->name('orders.index');
-
-    Route::post('/orders/{id}/return-request', function ($id, Request $request) {
-        return back()->with('success', 'Yêu cầu đổi trả/hoàn tiền đã được gửi. Bộ phận CSKH sẽ liên hệ trong 24h.');
-    })->name('orders.return.request');
-
-    Route::post('/product/{id}/reviews', function ($id, Request $request) {
-        return back()->with('success', 'Cảm ơn bạn đã đánh giá sản phẩm! Đánh giá đang chờ kiểm duyệt.');
-    })->name('reviews.store');
->>>>>>> origin/main
+    Route::get('/orders/{order}/returns', [ReturnRequestController::class, 'index'])->name('orders.returns.index');
+    Route::post('/orders/{order}/returns', [ReturnRequestController::class, 'store'])->name('orders.returns.store');
+    Route::get('/orders/{order}/returns/{returnRequest}', [ReturnRequestController::class, 'show'])->name('orders.returns.show');
+    Route::post('/orders/{order}/items/{orderItem}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 });
 
 // Guest order lookup
@@ -206,7 +201,7 @@ Route::get('/orders-lookup', function () {
 // SECTION 5: ADMIN PORTAL & REPORTS (Module 1, Teammate 2 & Teammate 3)
 // =========================================================================
 
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
     // 5.1 Admin Root Redirect
     Route::get('/', function () {
         return redirect()->route('admin.dashboard');
@@ -250,25 +245,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
     })->name('categories.index');
 
     // 5.5 Orders & Returns Management (Teammate 3 Slot)
-    Route::get('/orders', function () {
-        return view('admin.placeholder', [
-            'title' => 'Quản Lý Đơn Hàng & Đổi Trả',
-            'icon' => 'fas fa-receipt',
-            'assignedTo' => 'Teammate 3 (Phụ trách Đơn hàng & Thanh toán)',
-            'description' => 'Theo dõi luồng trạng thái đơn hàng (Chuẩn bị -> Vận chuyển -> Đã giao), xử lý khiếu nại và duyệt yêu cầu đổi trả / hoàn tiền.',
-            'routeTarget' => 'App\Http\Controllers\Admin\OrderController@index',
-        ]);
-    })->name('orders.index');
-
-    Route::get('/orders/{id}', function ($id) {
-        return view('admin.placeholder', [
-            'title' => 'Chi Tiết Đơn Hàng #' . $id,
-            'icon' => 'fas fa-file-invoice',
-            'assignedTo' => 'Teammate 3',
-            'description' => 'Chi tiết sản phẩm, thông tin giao hàng, đối soát thanh toán và cập nhật trạng thái vận đơn.',
-            'routeTarget' => 'App\Http\Controllers\Admin\OrderController@show',
-        ]);
-    })->name('orders.show');
+    Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
+    Route::patch('/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.status');
+    Route::patch('/orders/{order}/tracking', [AdminOrderController::class, 'updateTracking'])->name('orders.tracking');
+    Route::post('/orders/{order}/cancel', [AdminOrderController::class, 'cancel'])->name('orders.cancel');
+    Route::patch('/returns/{returnRequest}', [AdminOrderController::class, 'updateReturn'])->name('returns.update');
 
     // 5.6 Vouchers & Promotion Management (Teammate 3 Slot)
     Route::get('/vouchers', function () {
@@ -282,13 +264,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
     })->name('vouchers.index');
 
     // 5.7 Users & Members Management (Teammate 3 Slot)
-    Route::get('/users', function () {
-        return view('admin.placeholder', [
-            'title' => 'Quản Lý Thành Viên & Khách Hàng',
-            'icon' => 'fas fa-users',
-            'assignedTo' => 'Teammate 3 (Phụ trách Tài khoản & Khách hàng)',
-            'description' => 'Danh sách tài khoản khách hàng VIP/Guest, phân quyền quản trị viên và lịch sử mua sắm tích điểm.',
-            'routeTarget' => 'App\Http\Controllers\Admin\UserController@index',
-        ]);
-    })->name('users.index');
+    Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+    Route::patch('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
 });

@@ -64,6 +64,11 @@ class Product extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    public function stockMovements(): HasMany
+    {
+        return $this->hasMany(ProductStockMovement::class);
+    }
+
     public function getFinalPriceAttribute(): float
     {
         if ($this->discount_percent > 0) {
