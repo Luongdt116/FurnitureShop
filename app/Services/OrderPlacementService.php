@@ -114,6 +114,7 @@ class OrderPlacementService
                 $shippingFee = 0.0;
                 $discountAmount = 0.0;
                 $isOnlinePayment = $shipping['payment_method'] !== 'cod';
+                $paymentExpiresAt = $isOnlinePayment ? now()->addMinutes(30) : null;
 
                 $order = Order::query()->create([
                     'order_code' => 'AL-' . now()->format('ymdHis') . '-' . Str::upper(Str::random(5)),
@@ -129,7 +130,7 @@ class OrderPlacementService
                     'status' => 'preparing',
                     'payment_method' => $shipping['payment_method'],
                     'payment_status' => 'pending',
-                    'payment_expires_at' => $isOnlinePayment ? now()->addMinutes(30) : null,
+                    'payment_expires_at' => $paymentExpiresAt,
                     'customer_note' => $shipping['note'] ?? null,
                 ]);
 
@@ -166,6 +167,7 @@ class OrderPlacementService
                     'provider' => $shipping['payment_method'] === 'cod' ? 'cash_on_delivery' : 'demo',
                     'status' => 'pending',
                     'amount' => $order->total,
+                    'payment_expires_at' => $paymentExpiresAt,
                 ]);
 
                 OrderStatusHistory::query()->create([

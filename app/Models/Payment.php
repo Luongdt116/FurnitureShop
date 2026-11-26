@@ -31,7 +31,9 @@ class Payment extends Model
             if (in_array($payment->method, $onlineMethods, true)
                 && $status === 'pending'
                 && ! $payment->payment_expires_at) {
-                $payment->payment_expires_at = now()->addMinutes(30);
+                $payment->payment_expires_at = $payment->order_id
+                    ? Order::query()->whereKey($payment->order_id)->value('payment_expires_at')
+                    : null;
             }
         });
     }

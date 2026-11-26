@@ -559,35 +559,20 @@
                 <tbody>
                     @forelse($reconciliationList as $row)
                         @php
-                            $isModel = $row instanceof \App\Models\Order;
-                            $code = $isModel ? $row->order_code : $row->order_code;
-                            $rawDate = $isModel ? ($row->completed_at ?? $row->created_at) : ($row->completed_at ?? '');
+                            $code = $row->order_code;
+                            $rawDate = $row->completed_at ?? $row->created_at;
                             $date = $rawDate instanceof \DateTimeInterface ? $rawDate->format('d/m/Y') : (string) $rawDate;
-                            $name = $isModel ? $row->recipient_name : $row->recipient_name;
-                            $phone = $isModel ? $row->phone : $row->phone;
-                            $method = $isModel ? strtoupper($row->payment_method) : strtoupper($row->payment_method);
-                            
-                            $gross = $isModel ? (float)($row->total + $row->discount_amount) : (float)$row->gross_total;
-                            $discount = $isModel ? (float)$row->discount_amount : (float)$row->discount_amount;
-                            
-                            $refund = 0;
-                            if ($isModel) {
-                                $refund = (float) $row->returnRequests->where('status', 'completed')->where('return_type', 'refund')->sum('refund_amount');
-                            } else {
-                                $refund = (float) $row->refund_amount;
-                            }
-
-                            $accountingRev = 0;
-                            if ($isModel) {
-                                if ($row->status === 'delivered' && $row->payment_status === 'paid') {
-                                    $accountingRev = max(0, (float)$row->total - $refund);
-                                }
-                            } else {
-                                $accountingRev = (float)$row->accounting_revenue;
-                            }
-
-                            $status = $isModel ? $row->status : $row->status;
-                            $note = $isModel ? ($status === 'delivered' ? ($refund > 0 ? "Trừ hoàn tiền: -".number_format($refund, 0, ',', '.')."₫" : "Đã đối soát đủ") : "Chưa hoàn thành hoặc đã huỷ") : $row->note;
+                            $name = $row->recipient_name;
+                            $phone = $row->phone;
+                            $method = strtoupper($row->payment_method);
+                            $gross = (float) $row->accounting_gross_revenue + (float) $row->discount_amount;
+                            $discount = (float) $row->discount_amount;
+                            $refund = (float) $row->accounting_refund;
+                            $accountingRev = (float) $row->accounting_revenue;
+                            $status = $row->status;
+                            $note = $accountingRev > 0
+                                ? ($refund > 0 ? 'Trừ hoàn tiền: -' . number_format($refund, 0, ',', '.') . '₫' : 'Đã đối soát đủ')
+                                : 'Chưa hoàn thành hoặc chưa thanh toán';
                         @endphp
                         <tr>
                             <td><strong>#{{ $code }}</strong></td>

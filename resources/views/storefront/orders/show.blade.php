@@ -18,7 +18,7 @@
         default => 'gold',
     };
     $latestPayment = $order->payments->first();
-    $paymentExpiresAt = data_get($latestPayment, 'payment_expires_at') ?? data_get($order, 'payment_expires_at');
+    $paymentExpiresAt = $order->payment_expires_at;
     $onlinePayment = in_array($order->payment_method, ['online_demo', 'vnpay', 'vietqr'], true);
     $canRequestCancellation = in_array($order->status, ['preparing', 'awaiting_shipment'], true);
     $paymentMethodLabels = [

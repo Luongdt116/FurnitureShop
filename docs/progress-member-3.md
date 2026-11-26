@@ -17,7 +17,8 @@ Cập nhật: 26/11/2026
 - Không thay đổi tồn khi gửi, duyệt, nhận hoặc kiểm tra yêu cầu.
 - Khi admin chuyển yêu cầu từ `inspected` sang `completed`, `ReturnInventoryService` cộng số lượng được chấp nhận vào tồn kho và ghi biến động `return_restocked` theo từng dòng yêu cầu.
 - Migration `2026_11_26_000002_add_return_restock_movement_support` đã được chạy thành công trong Docker. Khóa duy nhất theo `return_request_item_id` giúp ngăn ghi biến động lặp cho cùng dòng đổi trả.
-- `CancellationService` hiện không tự thay đổi tồn kho; phần nhập lại kho do hủy đơn cần tích hợp riêng.
+- `CancellationService` của thành viên 2 hoàn tồn kho cho đơn bị hủy dựa trên biến động trừ kho và chống ghi lặp. Controller admin/khách không tự cập nhật stock.
+- `orders.payment_expires_at` là nguồn hạn thanh toán chính; `payments.payment_expires_at` được đồng bộ cùng thời điểm để phục vụ dữ liệu payment.
 
 ## Kiểm tra và giới hạn hiện tại
 

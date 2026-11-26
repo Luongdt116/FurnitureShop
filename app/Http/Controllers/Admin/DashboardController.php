@@ -26,9 +26,6 @@ class DashboardController extends Controller
 
         // Member count
         $customerCount = User::query()->where('role', 'customer')->count();
-        if ($customerCount === 0) {
-            $customerCount = 142;
-        }
 
         return view('admin.dashboard', compact(
             'kpi',

@@ -50,7 +50,7 @@ class ReportController extends Controller
     {
         [$startDate, $endDate, $period] = $this->resolveDateRange($request);
         $kpi = $this->revenueService->getSummaryMetrics($startDate, $endDate);
-        $reconciliationList = $this->revenueService->getOrderReconciliationList($startDate, $endDate);
+        $reconciliationList = $this->revenueService->getOrderReconciliationList($startDate, $endDate, paginate: false);
 
         $fileName = 'Bao_Cao_Doanh_Thu_AURA_' . ($period ?? 'all') . '_' . date('Ymd_His') . '.csv';
 
@@ -104,45 +104,25 @@ class ReportController extends Controller
 
             $index = 1;
             foreach ($reconciliationList as $row) {
-                // If row is an Eloquent Model
-                if ($row instanceof \App\Models\Order) {
-                    $orderRefunds = (float) $row->returnRequests->where('status', 'completed')->where('return_type', 'refund')->sum('refund_amount');
-                    $isPaidAndDelivered = ($row->status === 'delivered' && $row->payment_status === 'paid');
-                    $accountingRevenue = $isPaidAndDelivered ? max(0, (float)$row->total - $orderRefunds) : 0;
-                    
-                    $orderDate = $row->completed_at ?? $row->created_at;
-                    $formattedDate = $orderDate instanceof \DateTimeInterface ? $orderDate->format('d/m/Y H:i') : (string)$orderDate;
-                    fputcsv($handle, [
-                        $index++,
-                        $row->order_code,
-                        $formattedDate,
-                        $row->recipient_name,
-                        $row->phone,
-                        strtoupper($row->payment_method),
-                        number_format($row->total + $row->discount_amount, 0, ',', '.'),
-                        number_format((float) ($row->discount_amount ?? 0), 0, ',', '.'),
-                        number_format($orderRefunds, 0, ',', '.'),
-                        number_format($accountingRevenue, 0, ',', '.'),
-                        $row->status,
-                        $isPaidAndDelivered ? ($orderRefunds > 0 ? "Trừ hoàn tiền {$orderRefunds}" : 'Đã đối soát ghi nhận') : 'Chưa ghi nhận (chưa hoàn tất hoặc đã huỷ)',
-                    ]);
-                } else {
-                    // Fallback object
-                    fputcsv($handle, [
-                        $index++,
-                        $row->order_code,
-                        $row->completed_at,
-                        $row->recipient_name,
-                        $row->phone,
-                        strtoupper($row->payment_method),
-                        number_format($row->gross_total, 0, ',', '.'),
-                        number_format($row->discount_amount, 0, ',', '.'),
-                        number_format($row->refund_amount, 0, ',', '.'),
-                        number_format($row->accounting_revenue, 0, ',', '.'),
-                        $row->status,
-                        $row->note,
-                    ]);
-                }
+                $orderDate = $row->completed_at ?? $row->created_at;
+                $formattedDate = $orderDate instanceof \DateTimeInterface ? $orderDate->format('d/m/Y H:i') : (string) $orderDate;
+                $refund = (float) $row->accounting_refund;
+                $recognizedRevenue = (float) $row->accounting_revenue;
+
+                fputcsv($handle, [
+                    $index++,
+                    $row->order_code,
+                    $formattedDate,
+                    $row->recipient_name,
+                    $row->phone,
+                    strtoupper($row->payment_method),
+                    number_format((float) $row->total + (float) $row->discount_amount, 0, ',', '.'),
+                    number_format((float) ($row->discount_amount ?? 0), 0, ',', '.'),
+                    number_format($refund, 0, ',', '.'),
+                    number_format($recognizedRevenue, 0, ',', '.'),
+                    $row->status,
+                    $recognizedRevenue > 0 ? ($refund > 0 ? "Trừ hoàn tiền {$refund}" : 'Đã đối soát ghi nhận') : 'Chưa ghi nhận (chưa hoàn tất hoặc đã huỷ)',
+                ]);
             }
 
             fclose($handle);
