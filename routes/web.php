@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\StorefrontController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ReviewController;
@@ -34,6 +35,7 @@ Route::get('/catalog', [StorefrontController::class, 'catalog'])->name('catalog.
 Route::get('/catalog/search', [StorefrontController::class, 'search'])->name('catalog.search');
 Route::get('/catalog/suggestions', [StorefrontController::class, 'searchSuggestions'])->name('catalog.suggestions');
 Route::get('/product/{slug}', [StorefrontController::class, 'productDetail'])->name('product.detail');
+Route::post('/chat/webhook', [ChatController::class, 'webhook'])->middleware('throttle:30,1')->name('chat.webhook');
 
 // Storefront Informational Pages (About, Contact, Policies)
 Route::get('/about', function () {
