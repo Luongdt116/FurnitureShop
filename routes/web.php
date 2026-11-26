@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\StorefrontController;
 use App\Services\CartService;
 use Illuminate\Http\Request;
@@ -171,6 +173,11 @@ Route::post('/logout', function (Request $request) {
     return redirect()->route('home')->with('success', 'Đã đăng xuất tài khoản an toàn.');
 })->name('logout');
 
+Route::get('/forgot-password', [PasswordResetController::class, 'showLinkRequestForm'])->name('password.request');
+Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLinkEmail'])->name('password.email');
+Route::get('/reset-password/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
+Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name('password.update');
+
 
 // =========================================================================
 // SECTION 3: CART, CHECKOUT & TRANSACTIONS (Module 1 & Teammate 3)
@@ -214,13 +221,14 @@ Route::post('/checkout/process', [CheckoutController::class, 'store'])->middlewa
 // =========================================================================
 
 Route::middleware('auth')->group(function () {
-    Route::get('/account/profile', function () {
-        return view('storefront.account', ['tab' => 'profile']);
-    })->name('account.profile');
-
-    Route::get('/account/addresses', function () {
-        return view('storefront.account', ['tab' => 'addresses']);
-    })->name('account.addresses');
+    Route::get('/account/profile', [AccountController::class, 'profile'])->name('account.profile');
+    Route::patch('/account/profile', [AccountController::class, 'updateProfile'])->name('account.profile.update');
+    Route::put('/account/password', [AccountController::class, 'updatePassword'])->name('account.password.update');
+    Route::get('/account/addresses', [AccountController::class, 'addresses'])->name('account.addresses');
+    Route::post('/account/addresses', [AccountController::class, 'storeAddress'])->name('account.addresses.store');
+    Route::put('/account/addresses/{address}', [AccountController::class, 'updateAddress'])->whereNumber('address')->name('account.addresses.update');
+    Route::patch('/account/addresses/{address}/default', [AccountController::class, 'setDefaultAddress'])->whereNumber('address')->name('account.addresses.default');
+    Route::delete('/account/addresses/{address}', [AccountController::class, 'destroyAddress'])->whereNumber('address')->name('account.addresses.destroy');
 
     Route::get('/orders', function (Request $request) {
         $orders = $request->user()->orders()->with('items')->latest()->get();
