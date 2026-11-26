@@ -43,6 +43,19 @@ Truy cập:
 - **Bảng điều khiển Quản trị (Admin Dashboard)**: [http://localhost:8000/admin/dashboard](http://localhost:8000/admin/dashboard)
 - **Báo cáo doanh thu chuẩn kế toán**: [http://localhost:8000/admin/reports/revenue](http://localhost:8000/admin/reports/revenue)
 
+### Chạy bằng Docker Desktop 4.13.1
+
+Mở Docker Desktop và chờ Docker Engine khởi động, sau đó mở PowerShell tại thư mục `FurnitureShop`:
+
+```powershell
+docker compose up --build -d
+docker compose ps
+```
+
+Compose sẽ khởi động MySQL, chạy migration và dữ liệu mẫu, mở ứng dụng tại [http://localhost:8000](http://localhost:8000), phpMyAdmin tại [http://localhost:8080](http://localhost:8080), và chạy scheduler để tự hủy đơn online quá hạn. MySQL được ánh xạ ra máy host tại cổng `3307`.
+
+Xem log bằng `docker compose logs -f app scheduler`. Dừng các container bằng `docker compose down`; lệnh này giữ lại dữ liệu MySQL trong volume `dbdata`.
+
 ---
 
 ## 3. PHÂN CHIA NHIỆM VỤ NHÓM PHÁT TRIỂN
@@ -65,3 +78,6 @@ Tài liệu chi tiết hướng dẫn Teammate 2 và Teammate 3 cách tích hợ
 ## 5. TÀI KHOẢN MẪU ĐỂ KIỂM THỬ (DEMO CREDENTIALS)
 - **Quản trị viên (Admin)**: `admin@auraliving.vn` | Mật khẩu: `admin123`
 - **Khách hàng mẫu (Customer)**: `customer@gmail.com` | Mật khẩu: `password123`
+
+Nếu database chưa có hai tài khoản mẫu, tạo riêng chúng bằng `php artisan db:seed --class=DemoAccountsSeeder`.
+Để tạo danh mục và năm sản phẩm mẫu cho kiểm tra giỏ hàng, chạy `php artisan db:seed --class=DemoCatalogSeeder`.

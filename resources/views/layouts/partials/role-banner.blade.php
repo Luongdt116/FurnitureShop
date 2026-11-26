@@ -16,12 +16,10 @@
             <a id="store-admin-portal-link" href="{{ route('admin.dashboard') }}" class="role-switch-btn">
                 <i class="fas fa-user-shield"></i> Cổng Quản Trị (Admin Portal) &rarr;
             </a>
-        @else
-            <a id="store-admin-portal-link" href="{{ route('admin.dashboard') }}" class="role-switch-btn" title="Xem Cổng Quản Trị (Demo)">
-                <i class="fas fa-user-shield"></i> Cổng Quản Trị (Admin) &rarr;
-            </a>
         @endif
-        <span class="text-white-50 d-none d-sm-inline">|</span>
+        @if(auth()->check() && auth()->user()->role === 'admin')
+            <span class="text-white-50 d-none d-sm-inline">|</span>
+        @endif
         <span class="link-wireframe-view d-none d-md-inline-flex">
             <i class="fas fa-gem text-gold"></i> Bản Chuẩn High-Fidelity
         </span>

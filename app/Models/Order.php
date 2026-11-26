@@ -13,6 +13,7 @@ class Order extends Model
 
     protected $fillable = [
         'order_code',
+        'idempotency_key',
         'user_id',
         'coupon_id',
         'recipient_name',
@@ -25,6 +26,7 @@ class Order extends Model
         'status',
         'payment_method',
         'payment_status',
+        'payment_expires_at',
         'shipping_carrier',
         'tracking_code',
         'estimated_delivery_date',
@@ -48,6 +50,7 @@ class Order extends Model
             'confirmed_at' => 'datetime',
             'completed_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'payment_expires_at' => 'datetime',
         ];
     }
 

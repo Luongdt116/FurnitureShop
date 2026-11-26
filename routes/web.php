@@ -2,10 +2,16 @@
 
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\StorefrontController;
+use App\Services\CartService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\ValidationException;
 
 /*
 |--------------------------------------------------------------------------
@@ -74,18 +80,46 @@ Route::post('/newsletter/subscribe', function (Request $request) {
 // SECTION 2: AUTHENTICATION & ACCESS CONTROL (RBAC Ready)
 // =========================================================================
 
+Route::get('/login', function () {
+    return view('storefront.auth.login');
+})->name('login.show');
+
+Route::get('/register', function () {
+    return view('storefront.auth.register');
+})->name('register.show');
+
 Route::post('/login', function (Request $request) {
+    $guestSessionId = $request->session()->get('pending_guest_cart_session_id') ?? $request->session()->getId();
     $credentials = $request->validate([
         'email' => 'required|email',
         'password' => 'required',
     ]);
 
+    $credentials['is_active'] = true;
+
     if (Auth::attempt($credentials, $request->boolean('remember'))) {
         $request->session()->regenerate();
-        if (Auth::user()->role === 'admin') {
-            return redirect()->intended(route('admin.dashboard'))->with('success', 'Chào mừng Quản trị viên!');
+
+        try {
+            app(CartService::class)->mergeGuestCart(Auth::user(), $guestSessionId);
+            $request->session()->forget('pending_guest_cart_session_id');
+        } catch (ValidationException $exception) {
+            $request->session()->put('pending_guest_cart_session_id', $guestSessionId);
+
+            return redirect()->route('cart.index')
+                ->withErrors($exception->errors())
+                ->with('warning', 'Đã đăng nhập nhưng giỏ khách chưa thể gộp hoàn toàn. Các sản phẩm vẫn được giữ trong giỏ để bạn điều chỉnh.');
         }
-        return redirect()->intended(route('home'))->with('success', 'Đăng nhập thành công!');
+
+        if (Auth::user()->role === 'admin') {
+            return redirect()->route('admin.dashboard')->with('success', 'Chào mừng Quản trị viên!');
+        }
+        $redirect = $request->input('redirect');
+        if (! is_string($redirect) || ! str_starts_with($redirect, '/') || str_starts_with($redirect, '//')) {
+            $redirect = route('account.profile');
+        }
+
+        return redirect()->intended($redirect)->with('success', 'Đăng nhập thành công!');
     }
 
     return back()->withErrors([
@@ -94,6 +128,7 @@ Route::post('/login', function (Request $request) {
 })->name('login');
 
 Route::post('/register', function (Request $request) {
+    $guestSessionId = $request->session()->get('pending_guest_cart_session_id') ?? $request->session()->getId();
     $validated = $request->validate([
         'name' => 'required|string|max:150',
         'email' => 'required|email|unique:users,email',
@@ -111,7 +146,24 @@ Route::post('/register', function (Request $request) {
     ]);
 
     Auth::login($user);
-    return redirect()->route('home')->with('success', 'Đăng ký tài khoản thành viên thành công!');
+    $request->session()->regenerate();
+
+    try {
+        app(CartService::class)->mergeGuestCart($user, $guestSessionId);
+        $request->session()->forget('pending_guest_cart_session_id');
+    } catch (ValidationException $exception) {
+        $request->session()->put('pending_guest_cart_session_id', $guestSessionId);
+
+        return redirect()->route('cart.index')
+            ->withErrors($exception->errors())
+            ->with('warning', 'Tài khoản đã được tạo nhưng giỏ khách chưa thể gộp hoàn toàn. Các sản phẩm vẫn được giữ trong giỏ để bạn điều chỉnh.');
+    }
+    $redirect = $request->input('redirect');
+    if (! is_string($redirect) || ! str_starts_with($redirect, '/') || str_starts_with($redirect, '//')) {
+        $redirect = route('account.profile');
+    }
+
+    return redirect()->intended($redirect)->with('success', 'Đăng ký tài khoản thành viên thành công!');
 })->name('register');
 
 Route::post('/logout', function (Request $request) {
@@ -121,18 +173,24 @@ Route::post('/logout', function (Request $request) {
     return redirect()->route('home')->with('success', 'Đã đăng xuất tài khoản an toàn.');
 })->name('logout');
 
+Route::get('/forgot-password', [PasswordResetController::class, 'showLinkRequestForm'])->name('password.request');
+Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLinkEmail'])->name('password.email');
+Route::get('/reset-password/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
+Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name('password.update');
+
 
 // =========================================================================
 // SECTION 3: CART, CHECKOUT & TRANSACTIONS (Module 1 & Teammate 3)
 // =========================================================================
 
-Route::get('/cart', function () {
-    return view('storefront.cart');
-})->name('cart.index');
+Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 
-Route::post('/cart/add', [StorefrontController::class, 'addToCart'])->name('cart.add');
-Route::post('/cart/remove/{id}', [StorefrontController::class, 'removeFromCart'])->name('cart.remove');
-Route::post('/cart/clear', [StorefrontController::class, 'clearCart'])->name('cart.clear');
+Route::post('/cart/add', [CartController::class, 'store'])->name('cart.add');
+Route::patch('/cart/products/{product}', [CartController::class, 'updateProduct'])->name('cart.product.update');
+Route::patch('/cart/items/{cart}', [CartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/items/{cart}', [CartController::class, 'destroy'])->name('cart.destroy');
+Route::post('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
+Route::post('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
 
 // Vouchers & Coupons in Cart
 Route::post('/cart/coupon/apply', function (Request $request) {
@@ -154,13 +212,8 @@ Route::post('/cart/coupon/remove', function () {
 })->name('cart.coupon.remove');
 
 // Checkout Process
-Route::get('/checkout', function () {
-    return view('storefront.checkout');
-})->name('checkout.index');
-
-Route::post('/checkout/process', function (Request $request) {
-    return redirect()->route('home')->with('success', 'Đặt hàng thành công! Đơn hàng đang được chuẩn bị.');
-})->name('checkout.process');
+Route::get('/checkout', [CheckoutController::class, 'index'])->middleware('auth')->name('checkout.index');
+Route::post('/checkout/process', [CheckoutController::class, 'store'])->middleware('auth')->name('checkout.process');
 
 
 // =========================================================================
@@ -168,17 +221,24 @@ Route::post('/checkout/process', function (Request $request) {
 // =========================================================================
 
 Route::middleware('auth')->group(function () {
-    Route::get('/account/profile', function () {
-        return view('storefront.account', ['tab' => 'profile']);
-    })->name('account.profile');
+    Route::get('/account/profile', [AccountController::class, 'profile'])->name('account.profile');
+    Route::patch('/account/profile', [AccountController::class, 'updateProfile'])->name('account.profile.update');
+    Route::put('/account/password', [AccountController::class, 'updatePassword'])->name('account.password.update');
+    Route::get('/account/addresses', [AccountController::class, 'addresses'])->name('account.addresses');
+    Route::post('/account/addresses', [AccountController::class, 'storeAddress'])->name('account.addresses.store');
+    Route::put('/account/addresses/{address}', [AccountController::class, 'updateAddress'])->whereNumber('address')->name('account.addresses.update');
+    Route::patch('/account/addresses/{address}/default', [AccountController::class, 'setDefaultAddress'])->whereNumber('address')->name('account.addresses.default');
+    Route::delete('/account/addresses/{address}', [AccountController::class, 'destroyAddress'])->whereNumber('address')->name('account.addresses.destroy');
 
-    Route::get('/account/addresses', function () {
-        return view('storefront.account', ['tab' => 'addresses']);
-    })->name('account.addresses');
-
-    Route::get('/orders', function () {
-        return view('storefront.account', ['tab' => 'orders']);
+    Route::get('/orders', function (Request $request) {
+        $orders = $request->user()->orders()->with('items')->latest()->get();
+        return view('storefront.account', ['tab' => 'orders', 'orders' => $orders]);
     })->name('orders.index');
+
+    Route::post('/orders/{id}/cancel', [\App\Http\Controllers\OrderCancellationController::class, 'customer'])
+        ->whereNumber('id')->name('orders.cancel');
+    Route::post('/orders/{id}/expire', [\App\Http\Controllers\OrderCancellationController::class, 'expireCustomer'])
+        ->whereNumber('id')->name('orders.expire');
 
     Route::post('/orders/{id}/return-request', function ($id, Request $request) {
         return back()->with('success', 'Yêu cầu đổi trả/hoàn tiền đã được gửi. Bộ phận CSKH sẽ liên hệ trong 24h.');
@@ -199,7 +259,7 @@ Route::get('/orders-lookup', function () {
 // SECTION 5: ADMIN PORTAL & REPORTS (Module 1, Teammate 2 & Teammate 3)
 // =========================================================================
 
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     // 5.1 Admin Root Redirect
     Route::get('/', function () {
         return redirect()->route('admin.dashboard');
@@ -262,6 +322,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
             'routeTarget' => 'App\Http\Controllers\Admin\OrderController@show',
         ]);
     })->name('orders.show');
+
+    Route::post('/orders/{id}/cancel', [\App\Http\Controllers\OrderCancellationController::class, 'admin'])
+        ->whereNumber('id')->name('orders.cancel');
 
     // 5.6 Vouchers & Promotion Management (Teammate 3 Slot)
     Route::get('/vouchers', function () {

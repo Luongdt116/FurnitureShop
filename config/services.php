@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'payment_callback' => [
+        'secret' => env('PAYMENT_CALLBACK_SECRET'),
+    ],
+
 ];
