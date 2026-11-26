@@ -120,7 +120,7 @@ class ReportController extends Controller
                         $row->phone,
                         strtoupper($row->payment_method),
                         number_format($row->total + $row->discount_amount, 0, ',', '.'),
-                        number_format($row->discount_amount, 0, ',', '.'),
+                        number_format((float) ($row->discount_amount ?? 0), 0, ',', '.'),
                         number_format($orderRefunds, 0, ',', '.'),
                         number_format($accountingRevenue, 0, ',', '.'),
                         $row->status,

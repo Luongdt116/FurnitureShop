@@ -15,21 +15,49 @@ use Illuminate\Validation\ValidationException;
 
 class CancellationService
 {
+    public const PAYMENT_TIMEOUT_REASON = 'Quá thời gian thanh toán';
+
     public function cancelByCustomer(int $orderId, User $customer, string $reason): bool
     {
-        return $this->cancel($orderId, 'customer', $customer, $reason);
+        return $this->cancelById($orderId, 'customer', $customer, $reason);
     }
 
     public function cancelByAdmin(int $orderId, User $admin, string $reason): bool
     {
-        abort_unless($admin->isAdmin(), 403);
+        abort_unless($admin->isAdmin() && $admin->is_active, 403);
 
-        return $this->cancel($orderId, 'admin', $admin, $reason);
+        return $this->cancelById($orderId, 'admin', $admin, $reason);
     }
 
     public function expireOnlinePayment(int $orderId): bool
     {
-        return $this->cancel($orderId, 'system', null, 'Quá thời gian thanh toán');
+        return $this->cancelById($orderId, 'system', null, self::PAYMENT_TIMEOUT_REASON);
+    }
+
+    /** Compatibility entry point used by the customer/admin order controllers. */
+    public function cancel(Order $order, string $reason, ?User $actor, string $actorType): Order
+    {
+        $reason = trim($reason);
+        if ($reason === '' || mb_strlen($reason) > 255) {
+            throw ValidationException::withMessages([
+                'reason' => 'Lý do hủy là bắt buộc và không được vượt quá 255 ký tự.',
+            ]);
+        }
+
+        $cancelled = match ($actorType) {
+            'customer' => $actor ? $this->cancelByCustomer($order->id, $actor, $reason) : false,
+            'admin' => $actor ? $this->cancelByAdmin($order->id, $actor, $reason) : false,
+            'system' => $actor === null ? $this->expireOnlinePayment($order->id) : false,
+            default => throw ValidationException::withMessages(['actor' => 'Tác nhân hủy đơn không hợp lệ.']),
+        };
+
+        if (! $cancelled) {
+            throw ValidationException::withMessages([
+                'order' => 'Đơn hàng không còn ở trạng thái có thể hủy.',
+            ]);
+        }
+
+        return Order::query()->with(['payments', 'statusHistories'])->findOrFail($order->id);
     }
 
     /**
@@ -42,7 +70,7 @@ class CancellationService
         return $this->cancelLocked($order, $payments, 'system', null, 'Quá thời gian thanh toán', now());
     }
 
-    private function cancel(int $orderId, string $actorType, ?User $actor, string $reason): bool
+    private function cancelById(int $orderId, string $actorType, ?User $actor, string $reason): bool
     {
         return DB::transaction(function () use ($orderId, $actorType, $actor, $reason): bool {
             $order = Order::query()->whereKey($orderId)->lockForUpdate()->firstOrFail();

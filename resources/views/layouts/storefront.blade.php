@@ -117,7 +117,10 @@
     {{-- 8. Toast Notifications Container --}}
     <x-toast />
 
-    {{-- 9. Base UI Scripts --}}
+    {{-- 9. FurnitureShop chat advisor widget --}}
+    <x-chatbot />
+
+    {{-- 10. Base UI Scripts --}}
     <script>
         function toggleUserDropdown() {
             const menu = document.getElementById('store-user-dropdown-menu');

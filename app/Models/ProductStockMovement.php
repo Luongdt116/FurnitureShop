@@ -12,6 +12,7 @@ class ProductStockMovement extends Model
     protected $fillable = [
         'product_id',
         'order_item_id',
+        'return_request_item_id',
         'movement_type',
         'direction',
         'quantity',
@@ -36,5 +37,15 @@ class ProductStockMovement extends Model
     public function orderItem(): BelongsTo
     {
         return $this->belongsTo(OrderItem::class);
+    }
+
+    public function returnRequestItem(): BelongsTo
+    {
+        return $this->belongsTo(ReturnRequestItem::class);
+    }
+
+    public function actor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'actor_user_id');
     }
 }

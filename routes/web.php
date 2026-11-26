@@ -1,11 +1,17 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PasswordResetController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\ReturnRequestController;
 use App\Http\Controllers\StorefrontController;
 use App\Services\CartService;
 use Illuminate\Http\Request;
@@ -35,6 +41,7 @@ Route::get('/catalog', [StorefrontController::class, 'catalog'])->name('catalog.
 Route::get('/catalog/search', [StorefrontController::class, 'search'])->name('catalog.search');
 Route::get('/catalog/suggestions', [StorefrontController::class, 'searchSuggestions'])->name('catalog.suggestions');
 Route::get('/product/{slug}', [StorefrontController::class, 'productDetail'])->name('product.detail');
+Route::post('/chat/webhook', [ChatController::class, 'webhook'])->middleware('throttle:30,1')->name('chat.webhook');
 
 // Storefront Informational Pages (About, Contact, Policies)
 Route::get('/about', function () {
@@ -94,7 +101,6 @@ Route::post('/login', function (Request $request) {
         'email' => 'required|email',
         'password' => 'required',
     ]);
-
     $credentials['is_active'] = true;
 
     if (Auth::attempt($credentials, $request->boolean('remember'))) {
@@ -220,7 +226,7 @@ Route::post('/checkout/process', [CheckoutController::class, 'store'])->middlewa
 // SECTION 4: CUSTOMER PORTAL, REVIEWS & RETURNS (Teammate 3)
 // =========================================================================
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/account/profile', [AccountController::class, 'profile'])->name('account.profile');
     Route::patch('/account/profile', [AccountController::class, 'updateProfile'])->name('account.profile.update');
     Route::put('/account/password', [AccountController::class, 'updatePassword'])->name('account.password.update');
@@ -230,23 +236,15 @@ Route::middleware('auth')->group(function () {
     Route::patch('/account/addresses/{address}/default', [AccountController::class, 'setDefaultAddress'])->whereNumber('address')->name('account.addresses.default');
     Route::delete('/account/addresses/{address}', [AccountController::class, 'destroyAddress'])->whereNumber('address')->name('account.addresses.destroy');
 
-    Route::get('/orders', function (Request $request) {
-        $orders = $request->user()->orders()->with('items')->latest()->get();
-        return view('storefront.account', ['tab' => 'orders', 'orders' => $orders]);
-    })->name('orders.index');
-
-    Route::post('/orders/{id}/cancel', [\App\Http\Controllers\OrderCancellationController::class, 'customer'])
-        ->whereNumber('id')->name('orders.cancel');
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
     Route::post('/orders/{id}/expire', [\App\Http\Controllers\OrderCancellationController::class, 'expireCustomer'])
         ->whereNumber('id')->name('orders.expire');
-
-    Route::post('/orders/{id}/return-request', function ($id, Request $request) {
-        return back()->with('success', 'Yêu cầu đổi trả/hoàn tiền đã được gửi. Bộ phận CSKH sẽ liên hệ trong 24h.');
-    })->name('orders.return.request');
-
-    Route::post('/product/{id}/reviews', function ($id, Request $request) {
-        return back()->with('success', 'Cảm ơn bạn đã đánh giá sản phẩm! Đánh giá đang chờ kiểm duyệt.');
-    })->name('reviews.store');
+    Route::get('/orders/{order}/returns', [ReturnRequestController::class, 'index'])->name('orders.returns.index');
+    Route::post('/orders/{order}/returns', [ReturnRequestController::class, 'store'])->name('orders.returns.store');
+    Route::get('/orders/{order}/returns/{returnRequest}', [ReturnRequestController::class, 'show'])->name('orders.returns.show');
+    Route::post('/orders/{order}/items/{orderItem}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 });
 
 // Guest order lookup
@@ -303,28 +301,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     })->name('categories.index');
 
     // 5.5 Orders & Returns Management (Teammate 3 Slot)
-    Route::get('/orders', function () {
-        return view('admin.placeholder', [
-            'title' => 'Quản Lý Đơn Hàng & Đổi Trả',
-            'icon' => 'fas fa-receipt',
-            'assignedTo' => 'Teammate 3 (Phụ trách Đơn hàng & Thanh toán)',
-            'description' => 'Theo dõi luồng trạng thái đơn hàng (Chuẩn bị -> Vận chuyển -> Đã giao), xử lý khiếu nại và duyệt yêu cầu đổi trả / hoàn tiền.',
-            'routeTarget' => 'App\Http\Controllers\Admin\OrderController@index',
-        ]);
-    })->name('orders.index');
-
-    Route::get('/orders/{id}', function ($id) {
-        return view('admin.placeholder', [
-            'title' => 'Chi Tiết Đơn Hàng #' . $id,
-            'icon' => 'fas fa-file-invoice',
-            'assignedTo' => 'Teammate 3',
-            'description' => 'Chi tiết sản phẩm, thông tin giao hàng, đối soát thanh toán và cập nhật trạng thái vận đơn.',
-            'routeTarget' => 'App\Http\Controllers\Admin\OrderController@show',
-        ]);
-    })->name('orders.show');
-
-    Route::post('/orders/{id}/cancel', [\App\Http\Controllers\OrderCancellationController::class, 'admin'])
-        ->whereNumber('id')->name('orders.cancel');
+    Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
+    Route::patch('/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.status');
+    Route::patch('/orders/{order}/tracking', [AdminOrderController::class, 'updateTracking'])->name('orders.tracking');
+    Route::post('/orders/{order}/cancel', [AdminOrderController::class, 'cancel'])->name('orders.cancel');
+    Route::patch('/returns/{returnRequest}', [AdminOrderController::class, 'updateReturn'])->name('returns.update');
 
     // 5.6 Vouchers & Promotion Management (Teammate 3 Slot)
     Route::get('/vouchers', function () {
@@ -338,13 +320,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     })->name('vouchers.index');
 
     // 5.7 Users & Members Management (Teammate 3 Slot)
-    Route::get('/users', function () {
-        return view('admin.placeholder', [
-            'title' => 'Quản Lý Thành Viên & Khách Hàng',
-            'icon' => 'fas fa-users',
-            'assignedTo' => 'Teammate 3 (Phụ trách Tài khoản & Khách hàng)',
-            'description' => 'Danh sách tài khoản khách hàng VIP/Guest, phân quyền quản trị viên và lịch sử mua sắm tích điểm.',
-            'routeTarget' => 'App\Http\Controllers\Admin\UserController@index',
-        ]);
-    })->name('users.index');
+    Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+    Route::patch('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
 });
