@@ -11,6 +11,9 @@ use Illuminate\Support\Collection;
 
 class RevenueCalculationService
 {
+    /** Request-local accounting data cache keyed by date range. */
+    private array $ordersCache = [];
+
     private const PAYMENT_METHODS = [
         'cod' => 'Thanh toán COD khi nhận hàng',
         'vietqr' => 'Chuyển khoản ngân hàng VietQR',
@@ -24,7 +27,11 @@ class RevenueCalculationService
      */
     public function getSummaryMetrics(?Carbon $startDate = null, ?Carbon $endDate = null): array
     {
-        $orders = $this->ordersInRange($startDate, $endDate);
+        return $this->summarizeOrders($this->ordersInRange($startDate, $endDate));
+    }
+
+    private function summarizeOrders(Collection $orders): array
+    {
         $eligibleOrders = $orders->filter(fn (Order $order): bool => $this->isRevenueEligible($order));
 
         $grossRevenue = 0.0;
@@ -75,13 +82,14 @@ class RevenueCalculationService
     {
         $trend = [];
         $now = Carbon::now();
+        $monthCount = max(1, $months);
+        $firstMonth = $now->copy()->subMonths($monthCount - 1)->startOfMonth();
+        $ordersByMonth = $this->ordersInRange($firstMonth, $now->copy()->endOfMonth())
+            ->groupBy(fn (Order $order): string => $order->created_at->format('Y-m'));
 
-        for ($i = max(1, $months) - 1; $i >= 0; $i--) {
+        for ($i = $monthCount - 1; $i >= 0; $i--) {
             $targetMonth = $now->copy()->subMonths($i);
-            $metrics = $this->getSummaryMetrics(
-                $targetMonth->copy()->startOfMonth(),
-                $targetMonth->copy()->endOfMonth(),
-            );
+            $metrics = $this->summarizeOrders($ordersByMonth->get($targetMonth->format('Y-m'), collect()));
 
             $trend[] = [
                 'month_key' => $targetMonth->format('Y-m'),
@@ -167,9 +175,10 @@ class RevenueCalculationService
                 ];
             }
 
-            $results[$method]->revenue += $this->accountingAmounts($order)['net'];
+            $net = $this->accountingAmounts($order)['net'];
+            $results[$method]->revenue += $net;
             $results[$method]->count++;
-            $totalNet += $this->accountingAmounts($order)['net'];
+            $totalNet += $net;
         }
 
         foreach ($results as $method) {
@@ -225,11 +234,29 @@ class RevenueCalculationService
 
     private function ordersInRange(?Carbon $startDate, ?Carbon $endDate, array $extraRelations = []): Collection
     {
-        return Order::query()
-            ->with(array_merge(['returnRequests', 'payments'], $extraRelations))
-            ->when($startDate, fn ($query) => $query->where('created_at', '>=', $startDate->copy()->startOfDay()))
-            ->when($endDate, fn ($query) => $query->where('created_at', '<=', $endDate->copy()->endOfDay()))
-            ->get();
+        $start = $startDate?->copy()->startOfDay()->toDateTimeString();
+        $end = $endDate?->copy()->endOfDay()->toDateTimeString();
+        $cacheKey = ($start ?? '*') . '|' . ($end ?? '*');
+        $needsItems = in_array('items.product.category', $extraRelations, true);
+
+        if (isset($this->ordersCache[$cacheKey])
+            && ($this->ordersCache[$cacheKey]['with_items'] || ! $needsItems)) {
+            return $this->ordersCache[$cacheKey]['orders'];
+        }
+
+        $query = Order::query()
+            ->with(['returnRequests', 'payments'])
+            ->when($start, fn ($query) => $query->where('created_at', '>=', $start))
+            ->when($end, fn ($query) => $query->where('created_at', '<=', $end));
+
+        if ($needsItems) {
+            $query->with('items.product.category');
+        }
+
+        $orders = $query->get();
+        $this->ordersCache[$cacheKey] = ['orders' => $orders, 'with_items' => $needsItems];
+
+        return $orders;
     }
 
     private function isRevenueEligible(Order $order): bool

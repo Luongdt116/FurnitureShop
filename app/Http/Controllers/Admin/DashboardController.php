@@ -18,9 +18,9 @@ class DashboardController extends Controller
      */
     public function index(): View
     {
+        $categoryBreakdown = $this->revenueService->getCategoryBreakdown();
         $kpi = $this->revenueService->getSummaryMetrics();
         $revenueTrend = $this->revenueService->getMonthlyRevenueTrend(6);
-        $categoryBreakdown = $this->revenueService->getCategoryBreakdown();
         $recentOrders = $this->revenueService->getRecentOrders(6);
         $lowStockProducts = $this->revenueService->getLowStockProducts(5, 5);
 

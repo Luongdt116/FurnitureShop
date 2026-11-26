@@ -22,8 +22,8 @@ class ReportController extends Controller
     {
         [$startDate, $endDate, $period] = $this->resolveDateRange($request);
 
-        $kpi = $this->revenueService->getSummaryMetrics($startDate, $endDate);
         $categoryBreakdown = $this->revenueService->getCategoryBreakdown($startDate, $endDate);
+        $kpi = $this->revenueService->getSummaryMetrics($startDate, $endDate);
         $paymentMethodBreakdown = $this->revenueService->getPaymentMethodBreakdown($startDate, $endDate);
         $monthlyTrend = $this->revenueService->getMonthlyRevenueTrend(6);
         $reconciliationList = $this->revenueService->getOrderReconciliationList($startDate, $endDate);
