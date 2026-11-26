@@ -146,13 +146,17 @@ class OrderController extends Controller
             'estimated_delivery_date' => ['nullable', 'date'],
         ]);
 
-        if ($order->status === 'cancelled') {
-            throw ValidationException::withMessages([
-                'tracking_code' => 'Không thể cập nhật vận chuyển cho đơn đã hủy.',
-            ]);
-        }
+        DB::transaction(function () use ($order, $validated) {
+            $lockedOrder = Order::query()->whereKey($order->getKey())->lockForUpdate()->firstOrFail();
 
-        $order->fill($validated)->save();
+            if ($lockedOrder->status === 'cancelled') {
+                throw ValidationException::withMessages([
+                    'tracking_code' => 'Không thể cập nhật vận chuyển cho đơn đã hủy.',
+                ]);
+            }
+
+            $lockedOrder->fill($validated)->save();
+        });
 
         return back()->with('success', 'Đã cập nhật thông tin vận chuyển.');
     }
